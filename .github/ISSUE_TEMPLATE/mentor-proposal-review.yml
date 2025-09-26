@@ -1,0 +1,34 @@
+name: Proposal review (mentor)
+description: Use this template for the project mentor to provide feedback on the project proposal.
+title: Mentor proposal review
+body:
+  - type: input
+    id: topic
+    attributes:
+      label: Topic
+      description: Identify the general topic of the project.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goals
+      description: Describe the goal of the project.
+  - type: textarea
+    id: unclear
+    attributes:
+      label: Unclear elements
+      description: Is there anything that is unclear from the proposal?
+  - type: textarea
+    id: feasible
+    attributes:
+      label: Feasibility
+      description: How feasible will it be for the team to complete this project by the end of the semester?
+  - type: textarea
+    id: feedback
+    attributes:
+      label: Feedback
+      description: Provide constructive feedback on how the team might be able to improve their project.
+  - type: textarea
+    id: highlight
+    attributes:
+      label: Interesting aspects
+      description: What aspect of this project you are most interested in and would like to see highlighted in the final report?

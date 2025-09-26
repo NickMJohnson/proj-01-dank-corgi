@@ -1,0 +1,27 @@
+---
+title: "Project title"
+---
+
+# Objective(s)
+
+State the question(s) you are answering or the problem(s) you are solving clearly.
+
+# Data collection and cleaning
+
+Have an initial draft of your data cleaning appendix. Document every step that takes your raw data file(s) and turns it into the analysis-ready data set that you would submit with your final project. Include text narrative describing your data collection (downloading, scraping, surveys, etc) and any additional data curation/cleaning (merging data frames, filtering, transformations of variables, etc). Include code for data curation/cleaning, but not collection.
+
+# Data description
+
+Have an initial draft of your data description section. Your data description should be about your analysis-ready data.
+
+# Data limitations
+
+Identify any potential problems with your dataset.
+
+# Exploratory data analysis
+
+Perform an (initial) exploratory data analysis.
+
+# Questions for reviewers
+
+List specific questions for your peer reviewers and project mentor to answer in giving you feedback on this phase.

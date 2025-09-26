@@ -1,0 +1,34 @@
+name: EDA review (mentor)
+description: Use this template for the project mentor to provide feedback on the data collection and exploratory analysis.
+title: Mentor EDA review
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goals
+      description: Describe the goal of the project.
+  - type: textarea
+    id: data
+    attributes:
+      label: Data
+      description: Describe the data used or collected.
+  - type: textarea
+    id: improve
+    attributes:
+      label: Improvements
+      description: Provide constructive feedback on how the team might be able to improve their project.
+  - type: textarea
+    id: organization
+    attributes:
+      label: Organization
+      description: Provide constructive feedback on any issues with file and/or code organization.
+  - type: textarea
+    id: response-to-questions
+    attributes:
+      label: Responses to questions
+      description: Response to specific questions identified by the project team.
+  - type: textarea
+    id: further-comments
+    attributes:
+      label: Further comments
+      description: "Any further comments or feedback?"

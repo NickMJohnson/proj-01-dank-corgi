@@ -1,0 +1,13 @@
+[project]
+name = "template-repo"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pandas>=2.3.2",
+    "plotnine>=0.15.0",
+    "quarto-cli>=1.7.33",
+    "scikit-learn>=1.7.1",
+    "seaborn>=0.13.2",
+]

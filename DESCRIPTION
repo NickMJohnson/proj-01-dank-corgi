@@ -1,0 +1,7 @@
+Imports:
+  usethis,
+  styler,
+  reprex,
+  miniUI,
+  devtools,
+  gitcreds

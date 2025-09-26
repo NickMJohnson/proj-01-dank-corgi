@@ -1,0 +1,84 @@
+---
+title: "Project title"
+---
+
+# Data 1
+
+## Problem or question
+
+-   Identify the problem you will solve or the question you will answer
+-   Explain why you think this topic is important.
+-   Identify the types of data/variables you will use.
+-   State the major deliverable(s) you will create to solve this problem/answer this question.
+
+## Introduction and data
+
+If you are using a dataset:
+
+-   Identify the source of the data.
+
+-   State when and how it was originally collected (by the original data curator, not necessarily how you found the data).
+
+-   Write a brief description of the observations.
+
+-   Address ethical concerns about the data, if any.
+
+## Glimpse of data
+
+## Questions for reviewers
+
+List specific questions for your peer reviewers and project mentor to answer in giving you feedback on this topic.
+
+# Data 2
+
+## Problem or question
+
+-   Identify the problem you will solve or the question you will answer
+-   Explain why you think this topic is important.
+-   Identify the types of data/variables you will use.
+-   State the major deliverable(s) you will create to solve this problem/answer this question.
+
+## Introduction and data
+
+If you are using a dataset:
+
+-   Identify the source of the data.
+
+-   State when and how it was originally collected (by the original data curator, not necessarily how you found the data).
+
+-   Write a brief description of the observations.
+
+-   Address ethical concerns about the data, if any.
+
+## Glimpse of data
+
+## Questions for reviewers
+
+List specific questions for your peer reviewers and project mentor to answer in giving you feedback on this topic.
+
+# Data 3
+
+## Problem or question
+
+-   Identify the problem you will solve or the question you will answer
+-   Explain why you think this topic is important.
+-   Identify the types of data/variables you will use.
+-   State the major deliverable(s) you will create to solve this problem/answer this question.
+
+## Introduction and data
+
+If you are using a dataset:
+
+-   Identify the source of the data.
+
+-   State when and how it was originally collected (by the original data curator, not necessarily how you found the data).
+
+-   Write a brief description of the observations.
+
+-   Address ethical concerns about the data, if any.
+
+## Glimpse of data
+
+## Questions for reviewers
+
+List specific questions for your peer reviewers and project mentor to answer in giving you feedback on this topic.
