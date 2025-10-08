@@ -75,10 +75,6 @@ Usability Plan: We aim to build a small web app (Quarto + shinylive) where a use
 
 ## Introduction and data
 
-
--   Write a brief description of the observations.
-
-
 Source: NHANES (National Health and Nutrition Examination Survey), run by NCHS/CDC.
 
 Collection: Continuous, national survey since 1999 using multistage, stratified sampling. The data comes from an in-home questionnaire and a mobile examination center that collects lab samples. Each 2-year cycle has its own design variables and weights. Years used: 2015–2016 and 2017–2018. We’ll stack cycles, use variables that are constant, and adjust weights per NHANES documentation. 
@@ -102,20 +98,22 @@ Ethical Considerations: The main ethical concern I can see that may arise from t
 ```{python}
 import pandas as pd
 import numpy as np
-pd.set_option("display.max_columns", 200)
-pd.set_option("display.width", 120)
-```
-```{python}
-import pandas as pd
-import numpy as np
 
 target = "prediabetes"
 df = pd.read_csv("data-raw/nhanes1518_selected_labels.csv")
-
+df = df.drop(
+    columns=[
+        "RIDRETH3_code",
+        "RIAGENDR_code",
+        "RIDRETH1_code",
+        "DMDEDUC_code",
+        "INSURE_code",
+    ],
+    errors="ignore",
+)
 print("Shape")
 print(f"Rows: {df.shape[0]:,} | Columns: {df.shape[1]:,}")
 
-display(df.head(5))
 
 # missingness
 miss = (
@@ -137,20 +135,7 @@ num_cols = df.select_dtypes(include=[np.number, "bool"]).columns.tolist()
 if num_cols:
     num_desc = df[num_cols].describe().T
     num_desc["missing_pct"] = df[num_cols].isna().mean().values * 100
-    display(num_desc.round(4))
-
-# catagorical
-cat_cols = [c for c in df.columns if c not in num_cols]
-if cat_cols:
-    n = len(df)
-    topcats = []
-    for c in cat_cols:
-        vc = df[c].astype("object").value_counts(dropna=False).head(8)
-        tmp = vc.rename("count").to_frame().reset_index().rename(columns={"index": c})
-        tmp["pct"] = (tmp["count"] / n * 100).round(2)
-        tmp["column"] = c
-        topcats.append(tmp)
-    display(pd.concat(topcats, ignore_index=True))
+    display(num_desc.round(1))
 
     # Target Distribution
 if target is None:
@@ -189,6 +174,6 @@ if target and target in df.columns:
 
 List specific questions for your peer reviewers and project mentor to answer in giving you feedback on this topic.
 
-I had some trouble collecting data from the website and putting it together into a csv. Heres the website: https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Questionnaire&CycleBeginYear=2015 Do you have any reccomendations for resources that may help in this process. 
+I had some trouble collecting data from the website and putting it together into a csv. Heres the website: https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Questionnaire&CycleBeginYear=2015 Do you have any reccomendations for resources that may help in this process? 
 
 I would also appreciate guidance on how to work with the sampling weights that tell us how many people in the U.S. each respondent represents.
