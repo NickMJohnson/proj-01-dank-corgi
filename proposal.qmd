@@ -41,12 +41,23 @@ Ethical Considerations
 ## Glimpse of data
 
 ```{python}
+import pandas as pd
+from skimpy import skim
 
+# raw faers dataset (sample)
+df = pd.read_csv("data-raw/faers_sample.csv")
+
+print(f"Dataset shape: {df.shape}")
+print(f"Columns: {list(df.columns)[:10]} ...")
+
+# generating statistical overview
+skim(df)
 ```
 
 ## Questions for reviewers
-
-List specific questions for your peer reviewers and project mentor to answer in giving you feedback on this topic.
+1. Is the project question, predicting the type of adverse reaction for cardiovascular drugs using FAERS data, clearly defined and feasible for a classical ML model?
+2. Does using reaction type as the outcome variable make the analysis interpretable and meaningful for this dataset?
+3. Do you think the sample size (a reduced FAERS dataset under 100 MB, I had to take a random subet of my OG data because it was far over 100MB ) is large enough to yield reliable results while still being computationally feasible?
 
 # Data 2
 

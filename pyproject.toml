@@ -10,4 +10,5 @@ dependencies = [
     "quarto-cli>=1.7.33",
     "scikit-learn>=1.7.1",
     "seaborn>=0.13.2",
+    "skimpy>=0.0.18",
 ]
