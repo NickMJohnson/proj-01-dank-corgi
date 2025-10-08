@@ -47,11 +47,12 @@ from skimpy import skim
 # raw faers dataset (sample)
 df = pd.read_csv("data-raw/faers_sample.csv")
 
-print(f"Dataset shape: {df.shape}")
-print(f"Columns: {list(df.columns)[:10]} ...")
+# print(f"Dataset shape: {df.shape}")
+# print(f"Columns: {list(df.columns)[:10]} ...")
+# pd.set_option('display.max_colwidth', 80) 
+# skim(df)
 
-# generating statistical overview
-skim(df)
+
 ```
 
 ## Questions for reviewers
