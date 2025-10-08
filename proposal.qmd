@@ -5,25 +5,44 @@ title: "Project title"
 # Data 1
 
 ## Problem or question
+Question: Can we predict what type of adverse reaction a patient will experience when taking a cardiovascular drug, based on patient demographics and drug information?
 
--   Identify the problem you will solve or the question you will answer
--   Explain why you think this topic is important.
--   Identify the types of data/variables you will use.
--   State the major deliverable(s) you will create to solve this problem/answer this question.
+Objective: This project will build a multiclass machine learning classifier using data from the FDA Adverse Event Reporting System (FAERS) to predict the type of reported reaction for common cardiovascular medications.
+
+Importance: This topic is important because cardiovascular drugs—such as propranolol, lisinopril, losartan, enalapril, and atenolol—are among the most prescribed worldwide and are associated with a wide range of side effects that vary in severity and frequency across patient groups. Understanding which types of reactions are more common for specific drugs and demographics can improve post-market surveillance, support safer prescribing practices, and contribute to public health insights
+
+Variables: The dataset includes variables such as drug name (categorical), patient age and sex (quantitative and categorical), and the reported reaction (categorical target variable), along with additional metadata like report year and seriousness indicators.
+
+Deliverables: The major deliverables will include a cleaned and structured dataset derived from FAERS data, and a trained multiclass classification model that predicts reaction categories. 
+
 
 ## Introduction and data
+The dataset I compiled includes five widely prescribed cardiovascular drugs:
+* Propranolol (beta blocker)
+* Lisinopril, Losartan, Enalapril (ACE inhibitors/ARBs)
+* Atenolol (beta blocker)
 
-If you are using a dataset:
+The target variable will be the reaction column, which lists the main adverse event reported for each case. The model will learn patterns between demographic and drug-related predictors and the corresponding reaction type.
 
--   Identify the source of the data.
+Data Source
+* Dataset: Custom FAERS subset for five cardiovascular drugs (Propranolol, Lisinopril, Losartan, Enalapril, Atenolol)
+* Source: openFDA Drug Adverse Event API
+* Collector: U.S. Food and Drug Administration (FDA)
+* Collection Method: Reports submitted by healthcare professionals, manufacturers, and patients describing post-market adverse drug events.
 
--   State when and how it was originally collected (by the original data curator, not necessarily how you found the data).
+Data Description
+Each observation in the dataset represents a single adverse event report submitted to the FDA for one of five cardiovascular drugs: propranolol, lisinopril, losartan, enalapril, or atenolol. Each record contains basic patient demographics (age, sex), the specific drug associated with the report, and one or more reported reactions, which serve as the outcome variable for this study. The reactions vary widely, including both mild symptoms (e.g., dizziness, cough, fatigue) and more severe physiological effects (e.g., hypotension, bradycardia). Additional metadata such as the seriousness of the report and the year it was filed provide temporal and contextual insight. Overall, the dataset captures a diverse sample of post-market adverse event experiences across several classes of cardiovascular medications, enabling exploration of how reaction types differ by drug and patient profile.
 
--   Write a brief description of the observations.
-
--   Address ethical concerns about the data, if any.
+Ethical Considerations
+* Privacy: Data are fully de-identified and publicly available.
+* Bias: Reports are voluntarily submitted and may overrepresent severe or unusual events.
+* Interpretation: Model predictions reflect associations, not causal effects.
 
 ## Glimpse of data
+
+```{python}
+
+```
 
 ## Questions for reviewers
 
