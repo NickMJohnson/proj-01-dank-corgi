@@ -60,57 +60,86 @@ List specific questions for your peer reviewers and project mentor to answer in 
 
 ## Problem or question
 
--   Identify the problem you will solve or the question you will answer
--   Explain why you think this topic is important.
--   Identify the types of data/variables you will use.
--   State the major deliverable(s) you will create to solve this problem/answer this question.
+Problem: Can simple self-reported survey answers (no labs) identify adults who are likely to meet clinical prediabetes thresholds, so they can be given secondary testing?
+
+Objective: Train a calibrated classifier that estimates P(prediabetes) using only questionnaire items available and use it to determine who to give blood tests to.
+
+Why this matters: Prediabetes is common and underdiagnosed. A short survey would be low-cost and help public-health programs and community clinics determine who should receive lab testing. 
+
+Variable Types: 
+Quantitative: age, self-reported BMI, hours of sleep, weekly physical activity minutes.
+Categorical/ordinal: sex, race/ethnicity, education, income-to-poverty ratio band, health insurance, family history of diabetes, self-rated health, smoking status, alcohol use, leisure/transport physical-activity frequency, diet questions (e.g., sugary beverage frequency).
+Target from blood samples: Prediabetes = 1 if either A1c 5.7–6.4%, or Fasting plasma glucose 100–125 mg/dL,
+Usability Plan: We aim to build a small web app (Quarto + shinylive) where a user answers 10–15 survey questions and gets their predicted risk of being prediabetic along with a short explanation of contributing factors, and links suggesting follow up testing to confirm a diagnosis if their probability is high. 
+
 
 ## Introduction and data
 
-If you are using a dataset:
-
--   Identify the source of the data.
-
--   State when and how it was originally collected (by the original data curator, not necessarily how you found the data).
 
 -   Write a brief description of the observations.
 
--   Address ethical concerns about the data, if any.
+
+Source: NHANES (National Health and Nutrition Examination Survey), run by NCHS/CDC.
+
+Collection: Continuous, national survey since 1999 using multistage, stratified sampling. The data comes from an in-home questionnaire and a mobile examination center that collects lab samples. Each 2-year cycle has its own design variables and weights. Years used: 2015–2016 and 2017–2018. We’ll stack cycles, use variables that are constant, and adjust weights per NHANES documentation. 
+
+
+Observations: 
+
+    Dataset includes weights that estimate the amount of people a unique respondent represents 
+    
+    Missingness varies by feature with some entirely missing (probably a mistake on my part)
+
+    Fasting glucose is less complete than A1c
+
+    Dataset reflects participant at a single time point 
+
+    The target distribution is skewed towards no diabetes.
+
+Ethical Considerations: The main ethical concern I can see that may arise from the data would be if the tool were used for diagnostics in a way that would replace lab testing or doctor visits. To address this, we will put a warning that the tool is not diagnostic and is not meant to be taken as medical advice. The other concern would be the privacy of survey respondents. To address this, we will not save any identifying information. 
 
 ## Glimpse of data
 ```{python}
 import pandas as pd
 import numpy as np
-
+pd.set_option("display.max_columns", 200)
+pd.set_option("display.width", 120)
+```
+```{python}
+import pandas as pd
+import numpy as np
 
 target = "prediabetes"
 df = pd.read_csv("data-raw/nhanes1518_selected_labels.csv")
 
-
 print("Shape")
 print(f"Rows: {df.shape[0]:,} | Columns: {df.shape[1]:,}")
 
-
-
 display(df.head(5))
 
-#missingness
-miss = pd.DataFrame({
-    "column": df.columns,
-    "missing": df.isna().sum().values,
-    "missing_pct": (df.isna().mean().values * 100).round(2),
-    "dtype": [df[c].dtype for c in df.columns]
-}).sort_values(["missing_pct","column"], ascending=[False, True]).reset_index(drop=True)
+# missingness
+miss = (
+    pd.DataFrame(
+        {
+            "column": df.columns,
+            "missing": df.isna().sum().values,
+            "missing_pct": (df.isna().mean().values * 100).round(2),
+            "dtype": [df[c].dtype for c in df.columns],
+        }
+    )
+    .sort_values(["missing_pct", "column"], ascending=[False, True])
+    .reset_index(drop=True)
+)
 display(miss)
 
-#numeric
+# numeric
 num_cols = df.select_dtypes(include=[np.number, "bool"]).columns.tolist()
 if num_cols:
     num_desc = df[num_cols].describe().T
     num_desc["missing_pct"] = df[num_cols].isna().mean().values * 100
     display(num_desc.round(4))
 
-#catagorical
+# catagorical
 cat_cols = [c for c in df.columns if c not in num_cols]
 if cat_cols:
     n = len(df)
@@ -125,7 +154,15 @@ if cat_cols:
 
     # Target Distribution
 if target is None:
-    for cand in ["prediabetes","prediabetes_label","preDM","pre_dm","pre_diabetes","label","y"]:
+    for cand in [
+        "prediabetes",
+        "prediabetes_label",
+        "preDM",
+        "pre_dm",
+        "pre_diabetes",
+        "label",
+        "y",
+    ]:
         if cand in df.columns:
             target = cand
             break
@@ -137,7 +174,7 @@ if target and target in df.columns:
     elif t.dtype.kind in "biufc":
         t_bin = t
     else:
-        mapping = {"yes":1,"no":0,"true":1,"false":0,"y":1,"n":0}
+        mapping = {"yes": 1, "no": 0, "true": 1, "false": 0, "y": 1, "n": 0}
         t_bin = t.astype(str).str.lower().map(mapping)
 
     counts = t_bin.value_counts(dropna=False).to_frame(name="count")
@@ -146,10 +183,12 @@ if target and target in df.columns:
     prev = float(np.nanmean(pd.to_numeric(t_bin, errors="coerce")))
     print(f"Prevalence (mean of 0/1) ≈ {prev:.4f}")
 
-
 ```
+
 ## Questions for reviewers
 
 List specific questions for your peer reviewers and project mentor to answer in giving you feedback on this topic.
 
 I had some trouble collecting data from the website and putting it together into a csv. Heres the website: https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Questionnaire&CycleBeginYear=2015 Do you have any reccomendations for resources that may help in this process. 
+
+I would also appreciate guidance on how to work with the sampling weights that tell us how many people in the U.S. each respondent represents.
