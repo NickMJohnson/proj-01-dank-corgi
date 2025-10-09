@@ -172,18 +172,19 @@ if "reaction_clean" in df_sample.columns or "drug_clean" in df_sample.columns:
 
 ## Problem or question
 
--   **Question:** Can we predict the rent amount of housing units in New York City using features such as income band, financing program, and location?
+-   **Question:** Can we predict the rent amount of housing units in New York City by combining unit level rent data with building level characteristics?
 
--   **Objective:** This project will build a machine learning regression using the NYC Local Law 44 dataset to estimate rent levels for units in affordable housing developments. The goal is to understand which factors most influence rent prices across boroughs and housing programs.
+-   **Objective:** This project will build a machine learning regression model using both the Local Law 44 and Affordable Housing Production datasets to estimate and explain rent levels for affordable housing units across New York City.
+The model will merge unit-level income and rent information with building-level characteristics (such as construction type, total units, and borough) to identify the strongest predictors of rent variation.
 
--   **Importance:** Affordable housing is a major issue in NYC, where rent burden affects nearly half of all households. Identifying the strongest predictors of rent across different income bands and programs can support policy analysis, housing research, and transparency into how affordability programs function in practice.
+-   **Importance:** Affordable housing remains one of New York City’s most pressing issues. While previous analyses have examined rent prices at the city or borough level, few combine detailed unit-level affordability data with building-level development and policy indicators. We want to understand how program type, construction method, and neighborhood characteristics interact to affect rent levels can help policymakers assess which programs are most effective at maintaining affordability, and identify areas where rents rise faster than expected.
 
 -   **Variables:** 
-    - **Quantitative:** `monthly_rent`, `total_units`, `year_completed`, `ami_percent` (income level).  
-  - **Categorical:** `borough`, `project_name`, `financing_program`, `income_band`, `affordability_category`.  
-  - **Target variable:** `monthly_rent`.
+    - **Quantitative:** median_actual_rent, total_units, very_low_income_units, low_income_units, latitude, longitude 
+  - **Categorical:** borough, reporting_construction_type, income_band, project_name, prevailing_wage_status
+  - **Target variable:** monthly_rent
 
--   **Deliverables:** A cleaned dataset and a trained regression model that predicts unit rent. The final output could be an interactive dashboard showing predicted vs. actual rent by borough and income level.
+-   **Deliverables:** A merged dataset combining unit- and building-level data based off of borough block lot. We will perform exploratory data visualizations such as rent distribution by borough or construction type. A regression or tree-based model predicting rent level. And finally, a short report or dashboard summarizing insights for policy and housing equity
 
 ## Introduction and data
 
@@ -204,10 +205,25 @@ if "reaction_clean" in df_sample.columns or "drug_clean" in df_sample.columns:
 
 ```{python}
 import pandas as pd
-df = pd.read_csv("data-raw/ll44_unit_income_rent.csv")
-df.head()
 
-df_ahp = pd.read_csv("data-raw/affordable_housing_production_by_building.csv".csv")
+#load data
+df_ll44 = pd.read_csv("data-raw/ll44_unit_income_rent.csv")
+display(df_ll44.head())
+
+df_ahp = pd.read_csv("data-raw/affordable_housing_production_by_building.csv")
+display(df_ahp.head())
+
+#convert columns to lowercase
+df_ll44.columns = df_ll44.columns.str.lower()
+df_ahp.columns = df_ahp.columns.str.lower()
+
+# check for overlapping variables
+if "bbl" in df_ll44.columns and "bbl" in df_ahp.columns:
+    df_ll44["bbl"] = df_ll44["bbl"].astype(str)
+    df_ahp["bbl"] = df_ahp["bbl"].astype(str)
+    overlap = len(set(df_ll44["bbl"]) & set(df_ahp["bbl"]))
+
+display(df_ll44.describe(include="all").T.head(10))
 
 
 ```
