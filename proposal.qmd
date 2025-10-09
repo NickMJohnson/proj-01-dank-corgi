@@ -1,5 +1,5 @@
 ---
-title: "Project title"
+title: "INFO 4940: Project 01 Proposal"
 authors: Zhalae Daneshvari, Nick Johnson, Jolene Le
 format:
   pdf:
@@ -45,9 +45,9 @@ The target variable will be the reaction column, which lists the main adverse ev
 
 **Data Source**
 
--   **Dataset:** Custom FAERS subset for five cardiovascular drugs (Propranolol, Lisinopril, Losartan, Enalapril, Atenolol)
+-   **Dataset:** Custom [FAERS](https://www.fda.gov/drugs/fdas-adverse-event-reporting-system-faers/fda-adverse-event-reporting-system-faers-public-dashboard) subset for five cardiovascular drugs (Propranolol, Lisinopril, Losartan, Enalapril, Atenolol)
 
--   **Source:** openFDA Drug Adverse Event API 
+-   **Source:** openFDA Drug Adverse Event API
 
 -   **Collector:** U.S. Food and Drug Administration (FDA)
 
@@ -55,13 +55,13 @@ The target variable will be the reaction column, which lists the main adverse ev
 
 **Data Description**
 
-Each observation in the dataset represents a single adverse event report submitted to the FDA for one of five cardiovascular drugs: propranolol, lisinopril, losartan, enalapril, or atenolol. Each record contains basic patient demographics (age, sex), the specific drug associated with the report, and one or more reported reactions, which serve as the outcome variable for this study. The reactions vary widely, including both mild symptoms (e.g., dizziness, cough, fatigue) and more severe physiological effects (e.g., hypotension, bradycardia). Additional metadata such as the seriousness of the report and the year it was filed provide temporal and contextual insight. Overall, the dataset captures a diverse sample of post-market adverse event experiences across several classes of cardiovascular medications, enabling exploration of how reaction types differ by drug and patient profile.
+Each observation in the dataset represents a single adverse event report submitted to the FDA for one of five cardiovascular drugs: propranolol, lisinopril, losartan, enalapril, or atenolol. Each record contains basic patient demographics (age, sex), the specific drug associated with the report, and one or more reported reactions, which serve as the outcome variable for this study. The reactions vary widely, including both mild symptoms (e.g., dizziness, cough, fatigue) and more severe physiological effects (e.g., hypertension, bradycardia). Additional metadata such as the seriousness of the report and the year it was filed provide temporal and contextual insight. Overall, the dataset captures a diverse sample of post-market adverse event experiences across several classes of cardiovascular medications, enabling exploration of how reaction types differ by drug and patient profile.
 
 **Ethical Considerations**
 
 -   **Privacy:** Data are fully de-identified and publicly available.
 
--   **Bias:** Reports are voluntarily submitted and may overrepresent severe or unusual events.
+-   **Bias:** Reports are voluntarily submitted and may over-represent severe or unusual events.
 
 -   **Interpretation:** Model predictions reflect associations, not causal effects.
 
@@ -174,39 +174,36 @@ if "reaction_clean" in df_sample.columns or "drug_clean" in df_sample.columns:
 
 -   **Question:** Can we predict the rent amount of housing units in New York City by combining unit level rent data with building level characteristics?
 
--   **Objective:** This project will build a machine learning regression model using both the Local Law 44 and Affordable Housing Production datasets to estimate and explain rent levels for affordable housing units across New York City.
-The model will merge unit-level income and rent information with building-level characteristics (such as construction type, total units, and borough) to identify the strongest predictors of rent variation.
+-   **Objective:** This project will build a machine learning regression model using both the Local Law 44 and Affordable Housing Production datasets to estimate and explain rent levels for affordable housing units across New York City. The model will merge unit-level income and rent information with building-level characteristics (such as construction type, total units, and borough) to identify the strongest predictors of rent variation.
 
 -   **Importance:** Affordable housing remains one of New York City’s most pressing issues. While previous analyses have examined rent prices at the city or borough level, few combine detailed unit-level affordability data with building-level development and policy indicators. We want to understand how program type, construction method, and neighborhood characteristics interact to affect rent levels can help policymakers assess which programs are most effective at maintaining affordability, and identify areas where rents rise faster than expected.
 
--   **Variables:** 
-    - **Quantitative:** median_actual_rent, total_units, very_low_income_units, low_income_units, latitude, longitude 
-  - **Categorical:** borough, reporting_construction_type, income_band, project_name, prevailing_wage_status
-  - **Target variable:** monthly_rent
+-   **Variables:**
+
+    -   **Quantitative:** median_actual_rent, total_units, very_low_income_units, low_income_units, latitude, longitude
+
+-   **Categorical:** borough, reporting_construction_type, income_band, project_name, prevailing_wage_status
+
+-   **Target variable:** monthly_rent
 
 -   **Deliverables:** A merged dataset combining unit- and building-level data based off of borough block lot. We will perform exploratory data visualizations such as rent distribution by borough or construction type. A regression or tree-based model predicting rent level. And finally, a short report or dashboard summarizing insights for policy and housing equity
 
 ## Introduction and data
 
--   **Source** 
-    Local Law 44 - Unit Income Rend
-    [NYC Open Data Portal](https://data.cityofnewyork.us/Housing-Development/Local-Law-44-Unit-Income-Rent/9ay9-xkek)  
+-   **Source** Local Law 44 - Unit Income Rend [NYC Open Data Portal](https://data.cityofnewyork.us/Housing-Development/Local-Law-44-Unit-Income-Rent/9ay9-xkek)
 
-    Affordable Housing Production by Building
-    [NYC Open Data Portal](https://data.cityofnewyork.us/Housing-Development/Affordable-Housing-Production-by-Building/hg8x-zxpr/about_data)  
+    Affordable Housing Production by Building [NYC Open Data Portal](https://data.cityofnewyork.us/Housing-Development/Affordable-Housing-Production-by-Building/hg8x-zxpr/about_data)
 
+-   **Collection** Both datasets are maintained by the New York City Department of Housing Preservation and Development (HPD). The first dataset was introduced under tha 2012 law requiring that property owners of Housing Preservaation and Development (HPD) or Historic District Council (HDC) have to report yearly data on rent, income, and occupancy. The AHP dataset traks every affordable housing project since 2014 and includes details about building type, location, and total units. The data is submitted by property owners and developers to be released to the public via NYC Open Data API.
 
--   **Collection** Both datasets are maintained by the New York City Department of Housing Preservation and Development (HPD). The first dataset was introduced under tha 2012 law requiring that property owners of Housing Preservaation and Development (HPD) or Historic District Council (HDC) have to report yearly data on rent, income, and occupancy. The AHP dataset traks every affordable housing project since 2014 and includes details about building type, location, and total units. The data is submitted by property owners and developers to be released to the public via NYC Open Data API. 
+-   **Observations** The Local Law 44 dataset focuses on the unit level which can be things like income band, rent amount, bedroom size, and financing program. The Affordable Housing Production dataset focuses on the building level which include borough, construction type (new construction vs. preservation), total units, and completion date. I’m merging the two using their shared BBL (Borough, Block, and Lot) field, which acts like a unique ID for properties in NYC. By combining them, I can look at how both unit-specific and building-wide factors influence rent levels across different boroughs and affordability programs.
 
--   **Observations** The Local Law 44 dataset focuses on the unit level which can be things like income band, rent amount, bedroom size, and financing program. The Affordable Housing Production dataset focuses on the building level which include borough, construction type (new construction vs. preservation), total units, and completion date.
-I’m merging the two using their shared BBL (Borough, Block, and Lot) field, which acts like a unique ID for properties in NYC. By combining them, I can look at how both unit-specific and building-wide factors influence rent levels across different boroughs and affordability programs.
+-   **Ethical Concerns**
 
--   **Ethical Concerns** 
-      - The data are publicly available and anonymized, containing no personally identifiable information. 
-      - Potential ethical concerns include socioeconomic bias—models trained on affordability data may reflect existing inequities between boroughs and programs. 
+    -   The data are publicly available and anonymized, containing no personally identifiable information.
+    -   Potential ethical concerns include socioeconomic bias—models trained on affordability data may reflect existing inequities between boroughs and programs.
 
----
-
+------------------------------------------------------------------------
 
 ## Glimpse of data
 
@@ -236,12 +233,11 @@ display(df_ll44.describe(include="all").T.head(10))
 
 ## Questions for reviewers
 
-1. Do you think merging unit-level and building-level datasets throguh the BBL field actually add useful context for predicting rent, or would it be better to focus on only one dataset?
+1.  Do you think merging unit-level and building-level datasets throguh the BBL field actually add useful context for predicting rent, or would it be better to focus on only one dataset?
 
-2. For the target outcome, woudl it make more sense to predict rent as a continuous number, or group it into categories scuh as low or middle income so it is easier to interpret?
+2.  For the target outcome, woudl it make more sense to predict rent as a continuous number, or group it into categories scuh as low or middle income so it is easier to interpret?
 
-3. Would adding geographic variables like latitude and longitude or neighborhood areas improve the model’s predictions, or just make it too complex?
-
+3.  Would adding geographic variables like latitude and longitude or neighborhood areas improve the model’s predictions, or just make it too complex?
 
 # Data 3
 
