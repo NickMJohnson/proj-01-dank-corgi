@@ -190,13 +190,16 @@ The model will merge unit-level income and rent information with building-level 
 
 -   **Source** [NYC Open Data Portal](https://data.cityofnewyork.us/Housing-Development/Local-Law-44-Unit-Income-Rent/9ay9-xkek)  
 
+
+
+
 -   **Collection** This dataset is published under New York City’s Local Law 44 (2012). Each year, property owners of HPD- or HDC-assisted developments are required to report income, rent, and occupancy data for their units. HPD aggregates and releases this data publicly through the NYC Open Data API.
 
 -   **Observations** Each record corresponds to a housing unit within an affordable development. It includes the project and building identifiers, unit income band, rent amount, financing program, and location which can be the borough or district of the area. The dataset spans multiple years of reporting and covers thousands of buildings across all five boroughs.
 
 -   **Ethical Concerns** 
       - The data are publicly available and anonymized, containing no personally identifiable information. 
-      - Potential ethical concerns include socioeconomic bias—models trained on affordability data may reflect existing inequities between boroughs or programs. Results will be interpreted with attention to fairness and transparency.
+      - Potential ethical concerns include socioeconomic bias—models trained on affordability data may reflect existing inequities between boroughs and programs. 
 
 ---
 
@@ -225,14 +228,16 @@ if "bbl" in df_ll44.columns and "bbl" in df_ahp.columns:
 
 display(df_ll44.describe(include="all").T.head(10))
 
-
 ```
 
 ## Questions for reviewers
 
-1. 
-2. 
-3.
+1. Do you think merging unit-level and building-level datasets throguh the BBL field actually add useful context for predicting rent, or would it be better to focus on only one dataset?
+
+2. For the target outcome, woudl it make more sense to predict rent as a continuous number, or group it into categories scuh as low or middle income so it is easier to interpret?
+
+3. Would adding geographic variables like latitude and longitude or neighborhood areas improve the model’s predictions, or just make it too complex?
+
 
 # Data 3
 
