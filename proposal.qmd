@@ -191,6 +191,15 @@ If you are using a dataset:
 
 ## Glimpse of data
 
+```{python}
+import pandas as pd
+df = pd.read_csv("data-raw/ll44_unit_income_rent.csv")
+df.head()
+
+
+
+```
+
 ## Questions for reviewers
 
 List specific questions for your peer reviewers and project mentor to answer in giving you feedback on this topic.
