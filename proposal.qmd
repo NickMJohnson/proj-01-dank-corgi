@@ -1,6 +1,20 @@
 ---
 title: "Project title"
 authors: Zhalae Daneshvari, Nick Johnson, Jolene Le
+format:
+  pdf:
+    df-print: paged
+    code-block-font-size: 8pt
+    include-in-header:
+      text: |
+        \usepackage{geometry}
+        \geometry{left=0.7in,right=0.7in,top=1in,bottom=1in}
+        \usepackage{graphicx}
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{array}
+        \usepackage{adjustbox}
+        \AtBeginEnvironment{longtable}{\small}
 ---
 
 # Data 1
@@ -33,7 +47,7 @@ The target variable will be the reaction column, which lists the main adverse ev
 
 -   **Dataset:** Custom FAERS subset for five cardiovascular drugs (Propranolol, Lisinopril, Losartan, Enalapril, Atenolol)
 
--   **Source:** openFDA Drug Adverse Event API \*
+-   **Source:** openFDA Drug Adverse Event API 
 
 -   **Collector:** U.S. Food and Drug Administration (FDA)
 
@@ -57,11 +71,20 @@ Each observation in the dataset represents a single adverse event report submitt
 import pandas as pd
 import numpy as np
 import ast
+from IPython.display import HTML
+
+
+def fit_to_page(df):
+    html = df.to_html(index=True)
+    return HTML(
+        f"\\begin{{adjustbox}}{{max width=\\textwidth}}{html}\\end{{adjustbox}}"
+    )
+
 
 # dataset
 df = pd.read_csv("data-raw/faers_sample.csv")
 
-# Sample smaller portion 
+# Sample smaller portion
 df_sample = df.sample(n=min(2000, len(df)), random_state=42)
 
 
@@ -77,6 +100,7 @@ def extract_reaction(text):
     except Exception:
         return None
 
+
 def extract_drug(text):
     try:
         data = ast.literal_eval(str(text))
@@ -87,6 +111,7 @@ def extract_drug(text):
         return None
     except Exception:
         return None
+
 
 # apply flattening functions
 if "patient.reaction" in df_sample.columns:
@@ -106,7 +131,7 @@ print(df_sample.isna().sum().sort_values(ascending=False).head(10))
 
 # summary stats
 print("\nSummary statistics for numeric variables:")
-display(df_sample.describe().T)
+display(fit_to_page(df_sample.describe().T.round(2)))
 
 # overview of categorical variables
 print("\nCategorical variable overview (top 10):")
