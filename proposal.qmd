@@ -99,7 +99,7 @@ Why this matters: Prediabetes is common and underdiagnosed. A short survey would
 
 Variable Types: 
 Quantitative: age, self-reported BMI, hours of sleep, weekly physical activity minutes.
-Categorical/ordinal: sex, race/ethnicity, education, income-to-poverty ratio band, health insurance, family history of diabetes, self-rated health, smoking status, alcohol use, leisure/transport physical-activity frequency, diet questions (e.g., sugary beverage frequency).
+Categorical/ordinal: sex, race/ethnicity, health insurance, family history of diabetes, self-rated health, smoking status, alcohol use, physical-activity frequency, diet questions (e.g. sugary beverage frequency).
 Target from blood samples: Prediabetes = 1 if either A1c 5.7–6.4%, or Fasting plasma glucose 100–125 mg/dL,
 Usability Plan: We aim to build a small web app (Quarto + shinylive) where a user answers 10–15 survey questions and gets their predicted risk of being prediabetic along with a short explanation of contributing factors, and links suggesting follow up testing to confirm a diagnosis if their probability is high. 
 
@@ -121,7 +121,7 @@ Observations:
 
     Dataset reflects participant at a single time point 
 
-    The target distribution is skewed towards no diabetes.
+    The target distribution is skewed towards no diabetes
 
 Ethical Considerations: The main ethical concern I can see that may arise from the data would be if the tool were used for diagnostics in a way that would replace lab testing or doctor visits. To address this, we will put a warning that the tool is not diagnostic and is not meant to be taken as medical advice. The other concern would be the privacy of survey respondents. To address this, we will not save any identifying information. 
 
