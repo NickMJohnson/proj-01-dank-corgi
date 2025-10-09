@@ -129,18 +129,29 @@ print(df_sample.dtypes.value_counts())
 print("\nMissing values per column:")
 print(df_sample.isna().sum().sort_values(ascending=False).head(10))
 
-# summary stats
+# summary stats (it is a bit cut off at the end I tried for hours to fix...cannot figure out)
 print("\nSummary statistics for numeric variables:")
 display(fit_to_page(df_sample.describe().T.round(2)))
 
-# overview of categorical variables
+# overview of categorical variables (clean, compact)
 print("\nCategorical variable overview (top 10):")
+
 cat_cols = df_sample.select_dtypes(include="object").columns
 
 for col in cat_cols[:10]:
     print(f"\nColumn: {col}")
-    print("Unique values:", df_sample[col].nunique())
-    print(df_sample[col].astype(str).str.slice(0, 100).value_counts().head(3))
+    unique_vals = df_sample[col].nunique(dropna=True)
+    print(f"Unique values: {unique_vals}")
+
+    top_vals = (
+        df_sample[col]
+        .astype(str)
+        .str.slice(0, 80)  
+        .value_counts(dropna=True)
+        .head(3)
+    )
+    print(top_vals.to_string())
+
 
 # summary of cleaned fields
 if "reaction_clean" in df_sample.columns or "drug_clean" in df_sample.columns:
