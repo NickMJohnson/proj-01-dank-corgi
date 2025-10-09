@@ -205,8 +205,11 @@ if "reaction_clean" in df_sample.columns or "drug_clean" in df_sample.columns:
 ```{python}
 import pandas as pd
 df = pd.read_csv("data-raw/ll44_unit_income_rent.csv")
-
 df.head()
+
+df_ahp = pd.read_csv("data-raw/affordable_housing_production_by_building.csv".csv")
+
+
 ```
 
 ## Questions for reviewers
