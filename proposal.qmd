@@ -29,7 +29,7 @@ format:
 
 -   **Variables:** The dataset includes variables such as drug name (categorical), patient age and sex (quantitative and categorical), and the reported reaction (categorical target variable), along with additional metadata like report year and seriousness indicators.
 
--   **Deliverables:** The major deliverables will include a cleaned and structured dataset derived from FAERS data, and a trained classification model that predicts reaction categories.
+-   **Deliverables:** The major deliverables will include a cleaned and structured dataset derived from FAERS data, and a trained classification model that predicts reaction categories. Maybe a shiny dashboard people where people could put in a drug to see what likely adverse event may happen, to make it more usable.
 
 ## Introduction and data
 
