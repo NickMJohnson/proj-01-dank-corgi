@@ -172,37 +172,48 @@ if "reaction_clean" in df_sample.columns or "drug_clean" in df_sample.columns:
 
 ## Problem or question
 
--   Identify the problem you will solve or the question you will answer
--   Explain why you think this topic is important.
--   Identify the types of data/variables you will use.
--   State the major deliverable(s) you will create to solve this problem/answer this question.
+-   **Question:** Can we predict the rent amount of housing units in New York City using features such as income band, financing program, and location?
+
+-   **Objective:** This project will build a machine learning regression using the NYC Local Law 44 dataset to estimate rent levels for units in affordable housing developments. The goal is to understand which factors most influence rent prices across boroughs and housing programs.
+
+-   **Importance:** Affordable housing is a major issue in NYC, where rent burden affects nearly half of all households. Identifying the strongest predictors of rent across different income bands and programs can support policy analysis, housing research, and transparency into how affordability programs function in practice.
+
+-   **Variables:** 
+    - **Quantitative:** `monthly_rent`, `total_units`, `year_completed`, `ami_percent` (income level).  
+  - **Categorical:** `borough`, `project_name`, `financing_program`, `income_band`, `affordability_category`.  
+  - **Target variable:** `monthly_rent`.
+
+-   **Deliverables:** A cleaned dataset and a trained regression model that predicts unit rent. The final output could be an interactive dashboard showing predicted vs. actual rent by borough and income level.
 
 ## Introduction and data
 
-If you are using a dataset:
+-   **Source** [NYC Open Data Portal](https://data.cityofnewyork.us/Housing-Development/Local-Law-44-Unit-Income-Rent/9ay9-xkek)  
 
--   Identify the source of the data.
+-   **Collection** This dataset is published under New York City’s Local Law 44 (2012). Each year, property owners of HPD- or HDC-assisted developments are required to report income, rent, and occupancy data for their units. HPD aggregates and releases this data publicly through the NYC Open Data API.
 
--   State when and how it was originally collected (by the original data curator, not necessarily how you found the data).
+-   **Observations** Each record corresponds to a housing unit within an affordable development. It includes the project and building identifiers, unit income band, rent amount, financing program, and location which can be the borough or district of the area. The dataset spans multiple years of reporting and covers thousands of buildings across all five boroughs.
 
--   Write a brief description of the observations.
+-   **Ethical Concerns** 
+      - The data are publicly available and anonymized, containing no personally identifiable information. 
+      - Potential ethical concerns include socioeconomic bias—models trained on affordability data may reflect existing inequities between boroughs or programs. Results will be interpreted with attention to fairness and transparency.
 
--   Address ethical concerns about the data, if any.
+---
+
 
 ## Glimpse of data
 
 ```{python}
 import pandas as pd
 df = pd.read_csv("data-raw/ll44_unit_income_rent.csv")
+
 df.head()
-
-
-
 ```
 
 ## Questions for reviewers
 
-List specific questions for your peer reviewers and project mentor to answer in giving you feedback on this topic.
+1. 
+2. 
+3.
 
 # Data 3
 
