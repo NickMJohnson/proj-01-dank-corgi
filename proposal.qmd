@@ -188,14 +188,18 @@ The model will merge unit-level income and rent information with building-level 
 
 ## Introduction and data
 
--   **Source** [NYC Open Data Portal](https://data.cityofnewyork.us/Housing-Development/Local-Law-44-Unit-Income-Rent/9ay9-xkek)  
+-   **Source** 
+    Local Law 44 - Unit Income Rend
+    [NYC Open Data Portal](https://data.cityofnewyork.us/Housing-Development/Local-Law-44-Unit-Income-Rent/9ay9-xkek)  
+
+    Affordable Housing Production by Building
+    [NYC Open Data Portal](https://data.cityofnewyork.us/Housing-Development/Affordable-Housing-Production-by-Building/hg8x-zxpr/about_data)  
 
 
+-   **Collection** Both datasets are maintained by the New York City Department of Housing Preservation and Development (HPD). The first dataset was introduced under tha 2012 law requiring that property owners of Housing Preservaation and Development (HPD) or Historic District Council (HDC) have to report yearly data on rent, income, and occupancy. The AHP dataset traks every affordable housing project since 2014 and includes details about building type, location, and total units. The data is submitted by property owners and developers to be released to the public via NYC Open Data API. 
 
-
--   **Collection** This dataset is published under New York City’s Local Law 44 (2012). Each year, property owners of HPD- or HDC-assisted developments are required to report income, rent, and occupancy data for their units. HPD aggregates and releases this data publicly through the NYC Open Data API.
-
--   **Observations** Each record corresponds to a housing unit within an affordable development. It includes the project and building identifiers, unit income band, rent amount, financing program, and location which can be the borough or district of the area. The dataset spans multiple years of reporting and covers thousands of buildings across all five boroughs.
+-   **Observations** The Local Law 44 dataset focuses on the unit level which can be things like income band, rent amount, bedroom size, and financing program. The Affordable Housing Production dataset focuses on the building level which include borough, construction type (new construction vs. preservation), total units, and completion date.
+I’m merging the two using their shared BBL (Borough, Block, and Lot) field, which acts like a unique ID for properties in NYC. By combining them, I can look at how both unit-specific and building-wide factors influence rent levels across different boroughs and affordability programs.
 
 -   **Ethical Concerns** 
       - The data are publicly available and anonymized, containing no personally identifiable information. 
