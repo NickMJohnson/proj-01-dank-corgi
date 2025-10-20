@@ -17,8 +17,6 @@ State the question(s) you are answering or the problem(s) you are solving clearl
 
 **Source:** NHANES (National Health and Nutrition Examination Survey), run by NCHS/CDC.
 
-
-
 # Data collection and cleaning
 
 Have an initial draft of your data cleaning appendix. Document every step that takes your raw data file(s) and turns it into the analysis-ready data set that you would submit with your final project. Include text narrative describing your data collection (downloading, scraping, surveys, etc) and any additional data curation/cleaning (merging data frames, filtering, transformations of variables, etc). Include code for data curation/cleaning, but not collection.
@@ -33,16 +31,33 @@ Have an initial draft of your data cleaning appendix. Document every step that t
 
 Have an initial draft of your data description section. Your data description should be about your analysis-ready data.
 
+-   What are the observations (rows) and the attributes (columns)?
+-   Why was this dataset created?
+-   Who funded the creation of the dataset?
+-   What processes might have influenced what data was observed and recorded and what was not?
+-   What preprocessing was done, and how did the data come to be in the form that you are using?
+-   If people are involved, were they aware of the data collection and if so, what purpose did they expect the data to be used for?
+
 # Data limitations
 
 Identify any potential problems with your dataset.
+
+**Limitations:**
+
+-   
 
 **Ethical Considerations:** The main ethical concern we can see that may arise from the data would be if the tool were used for diagnostics in a way that would replace lab testing or doctor visits. To address this, we will put a warning that the tool is not diagnostic and is not meant to be taken as medical advice. The other concern would be the privacy of survey respondents. To address this, we will not save any identifying information.
 
 # Exploratory data analysis
 
-Perform an (initial) exploratory data analysis.
+Perform an (initial) exploratory data analysis
+
+```{python}
+
+```
 
 # Questions for reviewers
 
 List specific questions for your peer reviewers and project mentor to answer in giving you feedback on this phase.
+
+1.
