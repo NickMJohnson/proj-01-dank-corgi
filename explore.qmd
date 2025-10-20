@@ -1,14 +1,33 @@
 ---
-title: "Project title"
+title: "INFO 4490 Project 1: Exploratory Analysis"
+authors: Zhalae Daneshvari, Nick Johnson, Jolene Le
 ---
 
 # Objective(s)
 
 State the question(s) you are answering or the problem(s) you are solving clearly.
 
+**Problem:** Can simple self-reported survey answers (no labs) identify adults who are likely to meet clinical prediabetes thresholds, so they can be given secondary testing?
+
+**Objective:** Train a calibrated classifier that estimates P(prediabetes) using only questionnaire items available and use it to determine who to give blood tests to.
+
+**Why this matters:** Prediabetes is common and underdiagnosed. A short survey would be low-cost and help public-health programs and community clinics determine who should receive lab testing.
+
+**Deliverables:** We aim to build a small web app (Quarto + shinylive) where a user answers 10–15 survey questions and gets their predicted risk of being prediabetic along with a short explanation of contributing factors, and links suggesting follow up testing to confirm a diagnosis if their probability is high.
+
+**Source:** NHANES (National Health and Nutrition Examination Survey), run by NCHS/CDC.
+
+
+
 # Data collection and cleaning
 
 Have an initial draft of your data cleaning appendix. Document every step that takes your raw data file(s) and turns it into the analysis-ready data set that you would submit with your final project. Include text narrative describing your data collection (downloading, scraping, surveys, etc) and any additional data curation/cleaning (merging data frames, filtering, transformations of variables, etc). Include code for data curation/cleaning, but not collection.
+
+**Collection:** Continuous, national survey since 1999 using multistage, stratified sampling. The data comes from an in-home questionnaire and a mobile examination center that collects lab samples. Each 2-year cycle has its own design variables and weights. Years used: 2015–2016 and 2017–2018. We’ll stack cycles, use variables that are constant, and adjust weights per NHANES documentation.
+
+```{python}
+
+```
 
 # Data description
 
@@ -17,6 +36,8 @@ Have an initial draft of your data description section. Your data description sh
 # Data limitations
 
 Identify any potential problems with your dataset.
+
+**Ethical Considerations:** The main ethical concern we can see that may arise from the data would be if the tool were used for diagnostics in a way that would replace lab testing or doctor visits. To address this, we will put a warning that the tool is not diagnostic and is not meant to be taken as medical advice. The other concern would be the privacy of survey respondents. To address this, we will not save any identifying information.
 
 # Exploratory data analysis
 
