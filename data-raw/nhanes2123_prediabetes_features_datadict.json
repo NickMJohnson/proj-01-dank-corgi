@@ -1,0 +1,15 @@
+{
+  "SEQN": "Respondent sequence number (unique within release)",
+  "weight": "Analysis weight (MEC default; fasting weight if chosen)",
+  "A1c": "Glycohemoglobin (%)",
+  "FPG": "Fasting plasma glucose (mg/dL)",
+  "prediabetes_flag": "1 if A1c 5.7\u20136.4% or FPG 100\u2013125 mg/dL",
+  "age_years": "Age in years at screening",
+  "sex_code / sex": "1=Male, 2=Female / labeled",
+  "race_eth_code / race_eth": "RIDRETH3 code / labeled",
+  "bmi": "Measured BMI (if present)",
+  "bmi_from_selfreport": "BMI from self-reported height/weight (derived)",
+  "weight_change_1y_lb": "Current weight - weight 1y ago (lb)",
+  "ever_smoker": "1 if smoked \u2265100 cigarettes in lifetime (SMQ020)",
+  "current_smoker": "1 if smoke now every/some days (SMQ040)"
+}
