@@ -462,6 +462,7 @@ def build_cycle(L: str) -> pd.DataFrame:
     order = [
         c
         for c in [
+            "prediabetes_flag",
             "SEQN",
             "cycle",
             "weight",
@@ -525,7 +526,6 @@ def build_cycle(L: str) -> pd.DataFrame:
             "FPG",
             "a1c_percent",
             "fpg_mg_dl",
-            "prediabetes_flag",
             "weight_sample",
             "weight_fasting",
         ]
@@ -697,7 +697,6 @@ df = df.drop(
     errors="ignore",
 )
 
-
 # Write cleaned CSV
 os.makedirs(os.path.dirname(OUT_CSV), exist_ok=True)
 df.to_csv(OUT_CSV, index=False)
@@ -721,9 +720,10 @@ desc = {
 with open(OUT_DD, "w") as f:
     json.dump(desc, f, indent=2)
 
+
 print("Saved:", OUT_CSV)
 print("Data dictionary:", OUT_DD)
-print("All-NA columns (not dropped):", all_na[:20], "..." if len(all_na) > 20 else "")
+
 ```
 
 
