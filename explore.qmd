@@ -9,105 +9,137 @@ State the question(s) you are answering or the problem(s) you are solving clearl
 
 # Data collection and cleaning
 
-Have an initial draft of your data cleaning appendix. Document every step that takes your raw data file(s) and turns it into the analysis-ready data set that you would submit with your final project. Include text narrative describing your data collection (downloading, scraping, surveys, etc) and any additional data curation/cleaning (merging data frames, filtering, transformations of variables, etc). Include code for data curation/cleaning, but not collection.
+*Have an initial draft of your data cleaning appendix. Document every step that takes your raw data file(s) and turns it into the analysis-ready data set that you would submit with your final project. Include text narrative describing your data collection (downloading, scraping, surveys, etc) and any additional data curation/cleaning (merging data frames, filtering, transformations of variables, etc). Include code for data curation/cleaning, but not collection.*
 
-Data was pulled from https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Questionnaire&Cycle=2021-2023 that contains individual xpt documents for each of the following labratory tests, examinations, and questionaires. Here are the specific features we decided to use: 
+Data was pulled from [August 2021-August 2023 Questionnaire Data - Continuous NHANES]( https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Questionnaire&Cycle=2021-2023) that contains individual xpt documents for each of the following labratory tests, examinations, and questionaires.
 
-Weight history
-SEQN - Respondent sequence number
-WHD010 - Current self-reported height (inches)
-WHD020 - Current self-reported weight (pounds)
-WHD050 - Self-reported weight - 1 yr ago (pounds)
-WHQ070 - Tried to lose weight in past year
+**Here are the specific features we decided to use:**
 
-Reproductive Health
-RHQ031 - Had regular periods in past 12 months
-RHQ131 - Ever been pregnant?
-Sleep Disorders
-SLD012 - Sleep hours - weekdays or workdays
+-   Respondent Number (Join Key, *found in every table*)
 
-Cigarette Use
-SMQ020 - Smoked at least 100 cigarettes in life
-SMQ040 - Do you now smoke cigarettes?
+    -   SEQN - Respondent sequence number
 
-Physical Activity
-PAD680 - Minutes sedentary activity
+-   Weight history
 
-Mental Health - Depression Screener
-DPQ050 - Poor appetite or overeating
-DPQ020 - Feeling down, depressed, or hopeless
+    -   WHD010 - Current self-reported height (inches)
 
-Medical Conditions
-MCQ010 - Ever been told you have asthma
-MCQ053 - Taking treatment for anemia/past 3 mos
-MCQ160b - Ever told had congestive heart failure
-MCQ160e - Ever told you had heart attack
-MCQ160f - Ever told you had a stroke
-MCQ160m - Ever told you had thyroid problem
-MCQ160l - Ever told you had any liver condition
-MCQ510a - Liver condition: Fatty liver
-MCQ510b - Liver condition: Liver fibrosis
-MCQ510c - Liver condition: Liver cirrhosis
-MCQ510d - Liver condition: Viral hepatitis
-MCQ510e - Liver condition: Autoimmune hepatitis
+    -   WHD020 - Current self-reported weight (pounds)
 
-Kidney Conditions - Urology
-KIQ022 - Ever told you had weak/failing kidneys?
+    -   WHD050 - Self-reported weight - 1 yr ago (pounds)
 
-Body Measures
-BMXBMI - Body MAss Index (kg/m**2)
+    -   WHQ070 - Tried to lose weight in past year
 
-Diabetes
-DIQ010 - Doctor told you have diabetes (DROP participants that have diabetes)
+-   Reproductive Health
 
-Blood Pressure and Cholesterol
-BPQ020 - Ever told you had high blood pressure
-BPQ080 - Doctor told you - high cholesterol level
+    -   RHQ031 Had regular periods in past 12 months
 
-Alcohol Use
-ALQ130 - Avg # alcoholic drinks/day/past 12 mos
+    -   RHQ131 - Ever been pregnant?
 
-Demographics
-RIAGENDR - Gender
-RIDAGEYR - Age in years at screening
-RIDRETH3 - Race/Hispanic origin w/ NH Asian
+-   Sleep Disorders
 
-Target Column - Plasma Fasting Glucose
-LBXGLU - Fasting Glucose (mg/dL)
-Target Column - Glycohemoglobin
-LBXGH - Glycohemoglobin (%)
+    -   SLD012 - Sleep hours - weekdays or workdays
 
-Our collection process was as follows: 
+-   Cigarette Use
 
-1) Read and Standardize: Load each xpt file, keeping SEQN as key to join files
+    -   SMQ020 - Smoked at least 100 cigarettes in life SMQ040 - Do you now smoke cigarettes?
 
-2) Merge Fasting Glucose and Glycohemoglobin (GHB/GLU targets), Diabetes Questionaire (exclusions), and all other chosen survey questions and demographics.
+-   Physical Activity
 
-3) Filter: 
-Drop rows of child respondents. (RIDAGEYR < 18).
-Drop rows without Fasting Glucose and Glycohemoglobin (GHB/GLU) present.
-Drop rows of respondents who are diagnosed with diabetes as we want to predict if someone is prediabetic from the set of respondents who do not already have diabetes.
+    -   PAD680 - Minutes sedentary activity
 
-4) Rename variables to clear, readable names (e.g. PAD680: sedentary_minutes)
-Add labeled answer columns for many yes/no or categorical items (e.g. RIAGENDR=1.0: sex=male)
+-   Mental Health - Depression Screener
 
-5) Enforce numeric datatypes for numeric columns and set values outside of plausible ranges to NA. Ranges are as follows: 1) "age_years": (18, 99), "bmi": (10, 80), "A1c": (3, 20),"FPG": (50, 500),"sleep_hours_weekdays": (0, 24),"sedentary_minutes": (0, 1440),"drinks_per_day_12mo": (0, 50),"height_in": (40, 84),"weight_lb": (60, 700),"weight_1y_ago_lb": (60, 700).
+    -   DPQ050 - Poor appetite or overeating DPQ020 - Feeling down, depressed, or hopeless
 
-6) Compute Self-Reported BMI feature where BMI = (self reported weight (kg))/(height (m)^2)
+-   Medical Conditions
 
-7) Compute Change in weight feature where change in weight =  current weight minus self-reported weight 1 year ago. This will be positive if respondent gained weight and negative if they've lost weight.
+    -   MCQ010 - Ever been told you have asthma
 
-8) Map response to survey question: Have you ever smoked 100+ cigarettes? to: 1 if they responded "Yes", 0 if they responded "No" or Nan if respondent refused, answered "Don't know" or if response is missing. 
+    -   MCQ053 - Taking treatment for anemia/past 3 mos
 
-9) Map response to survey question: Do you smoke now? to 1 if they responded "Every day" or "Some days", 0 if they responded "Not at all", and Nan if they responded "Refused", "Don't know", or did not respond.
+    -   MCQ160b - Ever told had congestive heart failure
+
+    -   MCQ160e - Ever told you had heart attack
+
+    -   MCQ160f - Ever told you had a stroke
+
+    -   MCQ160m - Ever told you had thyroid problem
+
+    -   MCQ160l - Ever told you had any liver condition
+
+    -   MCQ510a - Liver condition: Fatty liver
+
+    -   MCQ510b - Liver condition: Liver fibrosis
+
+    -   MCQ510c - Liver condition: Liver cirrhosis
+
+    -   MCQ510d - Liver condition: Viral hepatitis
+
+    -   MCQ510e - Liver condition: Autoimmune hepatitis
+
+-   Kidney Conditions - Urology
+
+    -   KIQ022 - Ever told you had weak/failing kidneys?
+
+-   Body Measures
+
+    -   BMXBMI - Body MAss Index (kg/m\*\*2)
+
+-   Diabetes
+
+    -   DIQ010 - Doctor told you have diabetes (DROP participants that have diabetes)
+
+-   Blood Pressure and Cholesterol
+
+    -   BPQ020 - Ever told you had high blood pressure
+
+    -   BPQ080 - Doctor told you - high cholesterol level
+
+-   Alcohol Use
+
+    -   ALQ130 - Avg \# alcoholic drinks/day/past 12 mos
+
+-   Demographics
+
+    -   RIAGENDR - Gender
+
+    -   RIDAGEYR - Age in years at screening
+
+    -   RIDRETH3 - Race/Hispanic origin w/ NH Asian
+
+-   Target Column - Plasma Fasting Glucose
+
+    -   LBXGLU - Fasting Glucose (mg/dL)
+
+-   Target Column - Glycohemoglobin
+
+    -   LBXGH - Glycohemoglobin (%)
+
+**Our collection process was as follows:**
+
+1)  Read and Standardize: Load each xpt file, keeping SEQN as key to join files
+
+2)  Merge Fasting Glucose and Glycohemoglobin (GHB/GLU targets), Diabetes Questionaire (exclusions), and all other chosen survey questions and demographics.
+
+3)  Filter: Drop rows of child respondents. (RIDAGEYR \< 18). Drop rows without Fasting Glucose and Glycohemoglobin (GHB/GLU) present. Drop rows of respondents who are diagnosed with diabetes as we want to predict if someone is prediabetic from the set of respondents who do not already have diabetes.
+
+4)  Rename variables to clear, readable names (e.g. PAD680: sedentary_minutes) Add labeled answer columns for many yes/no or categorical items (e.g. RIAGENDR=1.0: sex=male)
+
+5)  Enforce numeric datatypes for numeric columns and set values outside of plausible ranges to NA. Ranges are as follows: 1) "age_years": (18, 99), "bmi": (10, 80), "A1c": (3, 20),"FPG": (50, 500),"sleep_hours_weekdays": (0, 24),"sedentary_minutes": (0, 1440),"drinks_per_day_12mo": (0, 50),"height_in": (40, 84),"weight_lb": (60, 700),"weight_1y_ago_lb": (60, 700).
+
+6)  Compute Self-Reported BMI feature where BMI = (self reported weight (kg))/(height (m)\^2)
+
+7)  Compute Change in weight feature where change in weight = current weight minus self-reported weight 1 year ago. This will be positive if respondent gained weight and negative if they've lost weight.
+
+8)  Map response to survey question: Have you ever smoked 100+ cigarettes? to: 1 if they responded "Yes", 0 if they responded "No" or Nan if respondent refused, answered "Don't know" or if response is missing.
+
+9)  Map response to survey question: Do you smoke now? to 1 if they responded "Every day" or "Some days", 0 if they responded "Not at all", and Nan if they responded "Refused", "Don't know", or did not respond.
 
 10) Drop columns that wont be used in the model such as weight, cycle, and ever_pregnant columns.
 
-11) Drop Fasting Glucose and Glycohemoglobin Columns derived from lab tests that were used to construct target prediabetes column. 
+11) Drop Fasting Glucose and Glycohemoglobin Columns derived from lab tests that were used to construct target prediabetes column.
 
 12) Drop columns used to remove respondents who are already diabetic.
-
-
 
 ```{python}
 import os, warnings
@@ -536,7 +568,8 @@ def build_cycle(L: str) -> pd.DataFrame:
     out = out[order]
 
     return out
- ```
+```
+
 ```{python}
 Path(os.path.dirname(OUT_CSV) or ".").mkdir(parents=True, exist_ok=True)
 parts = [build_cycle(L) for L in CYCLES]
@@ -561,6 +594,7 @@ if "weight" in df.columns:
 df.to_csv(OUT_CSV, index=False)
 print(f"Saved {OUT_CSV}  rows={len(df)}  cols={df.shape[1]}")
 ```
+
 ```{python}
 import pandas as pd, numpy as np, os, json, math
 
@@ -725,8 +759,6 @@ print("Saved:", OUT_CSV)
 print("Data dictionary:", OUT_DD)
 
 ```
-
-
 
 # Data description
 
