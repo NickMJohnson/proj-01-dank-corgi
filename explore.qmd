@@ -31,129 +31,84 @@ Data was pulled from [August 2021-August 2023 Questionnaire Data - Continuous NH
 **Here are the specific features we decided to use:**
 
 -   Respondent Number (Join Key, *found in every table*)
-
     -   SEQN - Respondent sequence number
 
 -   Weight history
-
     -   WHD010 - Current self-reported height (inches)
-
     -   WHD020 - Current self-reported weight (pounds)
-
     -   WHD050 - Self-reported weight - 1 yr ago (pounds)
-
     -   WHQ070 - Tried to lose weight in past year
 
 -   Reproductive Health
-
     -   RHQ031 Had regular periods in past 12 months
-
     -   RHQ131 - Ever been pregnant?
 
 -   Sleep Disorders
-
     -   SLD012 - Sleep hours - weekdays or workdays
 
 -   Cigarette Use
-
     -   SMQ020 - Smoked at least 100 cigarettes in life SMQ040 - Do you now smoke cigarettes?
 
 -   Physical Activity
-
     -   PAD680 - Minutes sedentary activity
 
 -   Mental Health - Depression Screener
-
     -   DPQ050 - Poor appetite or overeating DPQ020 - Feeling down, depressed, or hopeless
 
 -   Medical Conditions
-
     -   MCQ010 - Ever been told you have asthma
-
     -   MCQ053 - Taking treatment for anemia/past 3 mos
-
     -   MCQ160b - Ever told had congestive heart failure
-
     -   MCQ160e - Ever told you had heart attack
-
     -   MCQ160f - Ever told you had a stroke
-
     -   MCQ160m - Ever told you had thyroid problem
-
     -   MCQ160l - Ever told you had any liver condition
-
     -   MCQ510a - Liver condition: Fatty liver
-
     -   MCQ510b - Liver condition: Liver fibrosis
-
     -   MCQ510c - Liver condition: Liver cirrhosis
-
     -   MCQ510d - Liver condition: Viral hepatitis
-
     -   MCQ510e - Liver condition: Autoimmune hepatitis
 
 -   Kidney Conditions - Urology
-
     -   KIQ022 - Ever told you had weak/failing kidneys?
 
 -   Body Measures
-
     -   BMXBMI - Body MAss Index (kg/m\*\*2)
 
 -   Diabetes
-
     -   DIQ010 - Doctor told you have diabetes (DROP participants that have diabetes)
 
 -   Blood Pressure and Cholesterol
-
     -   BPQ020 - Ever told you had high blood pressure
-
     -   BPQ080 - Doctor told you - high cholesterol level
 
 -   Alcohol Use
-
     -   ALQ130 - Avg \# alcoholic drinks/day/past 12 mos
 
 -   Demographics
-
     -   RIAGENDR - Gender
-
     -   RIDAGEYR - Age in years at screening
-
     -   RIDRETH3 - Race/Hispanic origin w/ NH Asian
 
 -   Target Column - Plasma Fasting Glucose
-
     -   LBXGLU - Fasting Glucose (mg/dL)
 
 -   Target Column - Glycohemoglobin
-
     -   LBXGH - Glycohemoglobin (%)
 
 **Our collection process was as follows:**
 
 1)  Read and Standardize: Load each xpt file, keeping SEQN as key to join files
-
 2)  Merge Fasting Glucose and Glycohemoglobin (GHB/GLU targets), Diabetes Questionaire (exclusions), and all other chosen survey questions and demographics.
-
 3)  Filter: Drop rows of child respondents. (RIDAGEYR \< 18). Drop rows without Fasting Glucose and Glycohemoglobin (GHB/GLU) present. Drop rows of respondents who are diagnosed with diabetes as we want to predict if someone is prediabetic from the set of respondents who do not already have diabetes.
-
 4)  Rename variables to clear, readable names (e.g. PAD680: sedentary_minutes) Add labeled answer columns for many yes/no or categorical items (e.g. RIAGENDR=1.0: sex=male)
-
 5)  Enforce numeric datatypes for numeric columns and set values outside of plausible ranges to NA. Ranges are as follows: 1) "age_years": (18, 99), "bmi": (10, 80), "A1c": (3, 20),"FPG": (50, 500),"sleep_hours_weekdays": (0, 24),"sedentary_minutes": (0, 1440),"drinks_per_day_12mo": (0, 50),"height_in": (40, 84),"weight_lb": (60, 700),"weight_1y_ago_lb": (60, 700).
-
 6)  Compute Self-Reported BMI feature where BMI = (self reported weight (kg))/(height (m)\^2)
-
 7)  Compute Change in weight feature where change in weight = current weight minus self-reported weight 1 year ago. This will be positive if respondent gained weight and negative if they've lost weight.
-
 8)  Map response to survey question: Have you ever smoked 100+ cigarettes? to: 1 if they responded "Yes", 0 if they responded "No" or Nan if respondent refused, answered "Don't know" or if response is missing.
-
 9)  Map response to survey question: Do you smoke now? to 1 if they responded "Every day" or "Some days", 0 if they responded "Not at all", and Nan if they responded "Refused", "Don't know", or did not respond.
-
 10) Drop columns that wont be used in the model such as weight, cycle, and ever_pregnant columns.
-
 11) Drop Fasting Glucose and Glycohemoglobin Columns derived from lab tests that were used to construct target prediabetes column.
-
 12) Drop columns used to remove respondents who are already diabetic.
 
 ```{python}
@@ -780,68 +735,49 @@ print("Data dictionary:", OUT_DD)
 Have an initial draft of your data description section. Your data description should be about your analysis-ready data.
 Data Description
 
-Dataset Overview
+**Dataset Overview**
 Our analysis uses the Continuous NHANES (National Health and Nutrition Examination Survey) dataset collected between August 2021 and August 2023, publicly released by the U.S. Centers for Disease Control and Prevention (CDC) and the National Center for Health Statistics (NCHS). NHANES combines interviews, physical examinations, and laboratory tests to assess the health and nutritional status of adults and children in the United States.
 
 Each observation (row) in our analysis-ready dataset represents one adult respondent (age ≥ 18) who participated in the NHANES 2021–2023 cycle. Each attribute (column) represents either a self-reported questionnaire response, a derived health indicator, or one of the laboratory results used to define the target variable.
 
-Purpose and Funding
+**Purpose and Funding**
 NHANES was created to monitor the health and nutrition of the U.S. population and inform public-health policy. The survey is funded and managed by the U.S. Department of Health and Human Services, CDC, and NCHS. Our use of this dataset repurposes these nationally representative data for predictive modeling—to explore whether low-cost survey questions can predict likelihood of prediabetes and guide recommendations for further lab testing.
 
 Observations and Attributes
+- Observations: Each row corresponds to a single adult respondent uniquely identified by SEQN.
+- Target variable:
+    - Prediabetes flag = 1 if respondent’s fasting plasma glucose (LBXGLU) is between 100–125 mg/dL or glycohemoglobin (LBXGH) is between 5.7–6.4%.
+- Predictor attributes (selected questionnaire variables):
+    - Demographics: Age (RIDAGEYR), Sex (RIAGENDR), Race/Ethnicity (RIDRETH3)
+    - Weight history: Current and past weight, height, weight-change, BMI, self-reported attempts to lose weight
+    - Behavioral indicators: Smoking status, alcohol intake, sleep duration, physical activity (sedentary minutes)
+    - Medical history: Prior diagnoses of heart disease, stroke, thyroid disorder, liver/kidney conditions, asthma, hypertension, high cholesterol
+    - Mental health: Depression screener items (e.g., poor appetite, feeling down)
+    - Derived variables: Self-reported BMI, one-year weight change, ever-smoker (binary), current-smoker (binary)
 
-Observations: Each row corresponds to a single adult respondent uniquely identified by SEQN.
-
-Target variable:
-
-Prediabetes flag = 1 if respondent’s fasting plasma glucose (LBXGLU) is between 100–125 mg/dL or glycohemoglobin (LBXGH) is between 5.7–6.4%.
-
-Predictor attributes (selected questionnaire variables):
-
-Demographics: Age (RIDAGEYR), Sex (RIAGENDR), Race/Ethnicity (RIDRETH3)
-
-Weight history: Current and past weight, height, weight-change, BMI, self-reported attempts to lose weight
-
-Behavioral indicators: Smoking status, alcohol intake, sleep duration, physical activity (sedentary minutes)
-
-Medical history: Prior diagnoses of heart disease, stroke, thyroid disorder, liver/kidney conditions, asthma, hypertension, high cholesterol
-
-Mental health: Depression screener items (e.g., poor appetite, feeling down)
-
-Derived variables: Self-reported BMI, one-year weight change, ever-smoker (binary), current-smoker (binary)
-
-Data Generation and Collection Process
+**Data Generation and Collection Process**
 NHANES uses a stratified multistage probability sample to ensure national representativeness. Participants provide informed consent and complete standardized interviews and physical exams in mobile examination centers. Questionnaire responses are self-reported; laboratory measures (e.g., glucose, HbA1c) are obtained from blood samples.
 
 The inclusion and content of survey modules are designed by NCHS researchers and may change slightly each cycle; these decisions influence which variables are available or missing for given respondents. Nonresponse, refusal, or “Don’t know” answers also introduce missingness in self-reported features.
 
-Preprocessing and Cleaning
+**Preprocessing and Cleaning**
 To produce an analysis-ready dataset, we performed the following steps:
-
-Merge: Combined relevant laboratory (GHB, GLU), demographic (DEMO), and questionnaire (e.g., WHQ, SLQ, SMQ, MCQ) .XPT files using SEQN as a join key.
-
-Filter: Kept only adult respondents (age ≥ 18) with available fasting glucose and/or HbA1c values. Excluded any respondent diagnosed with diabetes or taking insulin/oral medication.
-
-Standardize and clean:
-
-Renamed variables for clarity (e.g., PAD680 → sedentary_minutes).
-
-Enforced numeric data types and set implausible values outside realistic human ranges to NaN.
-
-Created derived features (bmi_from_selfreport, weight_change_1y_lb, ever_smoker, current_smoker).
-
-Added labeled versions of categorical codes for readability (e.g., 1 → “Yes,” 2 → “No”).
-
-Target construction: Labeled each respondent as prediabetic = 1 if LBXGLU ∈ [100, 125] or LBXGH ∈ [5.7, 6.4]; otherwise 0.
-
-Finalize: Dropped unused columns (e.g., lab variables after target creation, pregnancy items) and exported a cleaned CSV for modeling.
+1) Merge: Combined relevant laboratory (GHB, GLU), demographic (DEMO), and questionnaire (e.g., WHQ, SLQ, SMQ, MCQ) .XPT files using SEQN as a join key.
+2) Filter: Kept only adult respondents (age ≥ 18) with available fasting glucose and/or HbA1c values. Excluded any respondent diagnosed with diabetes or taking insulin/oral medication.
+3) Standardize and clean:
+- Renamed variables for clarity (e.g., PAD680 → sedentary_minutes).
+- Enforced numeric data types and set implausible values outside realistic human ranges to NaN.
+- Created derived features (bmi_from_selfreport, weight_change_1y_lb, ever_smoker, current_smoker).
+- Added labeled versions of categorical codes for readability (e.g., 1 → “Yes,” 2 → “No”).
+4) Target construction: Labeled each respondent as prediabetic = 1 if LBXGLU ∈ [100, 125] or LBXGH ∈ [5.7, 6.4]; otherwise 0.
+5) Finalize: Dropped unused columns (e.g., lab variables after target creation, pregnancy items) and exported a cleaned CSV for modeling.
 
 After filtering, the final dataset includes one row per adult respondent and a set of features derived from self-reported survey data, ready for supervised binary classification.
 
-Awareness and Consent
+**Awareness and Consent**
 All NHANES participants provide written informed consent prior to participation. They are informed that their data will be used for research and statistical analysis to improve public health. Data are de-identified before public release, and our analysis uses only the publicly available, anonymized files.
 
-Summary
+**Summary**
 The resulting dataset represents a nationally representative adult sample with validated laboratory outcomes and extensive self-reported health and behavior variables. It provides an ideal foundation for testing whether self-reported survey data alone can identify individuals who are likely prediabetic and should be prioritized for confirmatory blood testing.
 
 # Data limitations
@@ -851,6 +787,84 @@ Identify any potential problems with your dataset.
 # Exploratory data analysis
 
 Perform an (initial) exploratory data analysis.
+
+```{python}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# load cleaned dataset
+df = pd.read_csv("data-raw/nhanes2123_prediabetes_features_labeled_clean.csv")
+
+# basic overview
+print(df.shape)
+df.head()
+
+# summary of target variable
+print(df["prediabetes_flag"].value_counts())
+print(df["prediabetes_flag"].value_counts(normalize=True))
+
+plt.figure(figsize=(5, 4))
+sns.countplot(x="prediabetes_flag", data=df, palette="Set2")
+plt.title("Prediabetes Flag Distribution")
+plt.xlabel("Prediabetes Flag (0 = Normal, 1 = Prediabetic)")
+plt.show()
+
+# check missing values
+missing = df.isna().mean().sort_values(ascending=False)
+print(missing.head(10))
+
+# distribution of continuous vars
+num_vars = [
+    "age_years",
+    "bmi_from_selfreport",
+    "sleep_hours_weekdays",
+    "sedentary_minutes",
+    "drinks_per_day_12mo",
+]
+
+for col in num_vars:
+    plt.figure(figsize=(6, 4))
+    sns.histplot(df[col], kde=True, color="steelblue", bins=30)
+    plt.title(f"{col} distribution")
+    plt.tight_layout()
+    plt.show()
+
+# distribution of some categorical vars
+cat_vars = ["sex", "race_eth", "ever_smoker", "current_smoker"]
+
+for col in cat_vars:
+    plt.figure(figsize=(6, 4))
+    sns.countplot(x=col, data=df, palette="pastel")
+    plt.title(f"{col} frequencies")
+    plt.xticks(rotation=25)
+    plt.tight_layout()
+    plt.show()
+
+# relationship between BMI and prediabetes flag
+plt.figure(figsize=(6, 4))
+sns.boxplot(data=df, x="prediabetes_flag", y="bmi_from_selfreport", palette="coolwarm")
+plt.title("BMI vs Prediabetes Status")
+plt.xlabel("Prediabetes Flag (0=No, 1=Yes)")
+plt.show()
+
+# relationship between age and prediabetes flag
+plt.figure(figsize=(6, 4))
+sns.boxplot(data=df, x="prediabetes_flag", y="age_years", palette="mako")
+plt.title("Age vs Prediabetes Status")
+plt.xlabel("Prediabetes Flag (0=No, 1=Yes)")
+plt.show()
+
+# smoking and prediabetes
+plt.figure(figsize=(6, 4))
+sns.barplot(data=df, x="ever_smoker", y="prediabetes_flag", palette="Set2")
+plt.title("Prediabetes Rate by Smoking History")
+plt.xlabel("Ever Smoked (1=Yes, 0=No)")
+plt.ylabel("Mean Prediabetes Flag")
+plt.show()
+
+```
 
 # Questions for reviewers
 
