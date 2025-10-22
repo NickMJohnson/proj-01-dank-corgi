@@ -5,13 +5,28 @@ authors: Zhalae Daneshvari, Nick Johnson, Jolene Le
 
 # Objective(s)
 
-State the question(s) you are answering or the problem(s) you are solving clearly.
+*State the question(s) you are answering or the problem(s) you are solving clearly.*
+
+The goal of this project is to develop a **supervised binary classification model** that identifies whether an adult is *likely prediabetic* based solely on self-reported survey data from the NHANES Continuous Questionnaire (August 2021–August 2023). The model predicts the probability that each respondent falls within clinical prediabetes ranges for either **fasting plasma glucose** (LBXGLU: 100–125 mg/dL) or **glycohemoglobin (HbA1c)** (LBXGH: 5.7–6.4%).
+
+Our specific objectives are to:
+
+1.  **Train a binary classifier** (e.g., logistic regression or random forest) that estimates the probability of prediabetes using selected demographic, lifestyle, and self-reported health features.
+
+2.  **Label individuals as “likely prediabetic” or “not likely prediabetic”** by applying a probability threshold, effectively identifying who should be referred for confirmatory laboratory testing.
+
+3.  **Evaluate model performance** by comparing predicted labels to true lab-based outcomes using metrics such as accuracy, recall, precision, and ROC AUC.
+
+4.  **Demonstrate the potential of survey-based screening** as a low-cost, scalable method to guide early detection and prioritize follow-up testing.
+
+**Why this matters:**\
+Prediabetes is widespread yet often undiagnosed, as many adults do not undergo routine blood testing. A survey-based model that flags individuals as *likely prediabetic* provides a simple, accessible first step—allowing clinics and community health programs to focus lab resources on those most at risk, promote earlier diagnosis, and help prevent progression to Type 2 diabetes.
 
 # Data collection and cleaning
 
 *Have an initial draft of your data cleaning appendix. Document every step that takes your raw data file(s) and turns it into the analysis-ready data set that you would submit with your final project. Include text narrative describing your data collection (downloading, scraping, surveys, etc) and any additional data curation/cleaning (merging data frames, filtering, transformations of variables, etc). Include code for data curation/cleaning, but not collection.*
 
-Data was pulled from [August 2021-August 2023 Questionnaire Data - Continuous NHANES]( https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Questionnaire&Cycle=2021-2023) that contains individual xpt documents for each of the following labratory tests, examinations, and questionaires.
+Data was pulled from [August 2021-August 2023 Questionnaire Data - Continuous NHANES](https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Questionnaire&Cycle=2021-2023) that contains individual xpt documents for each of the following labratory tests, examinations, and questionaires.
 
 **Here are the specific features we decided to use:**
 
