@@ -736,14 +736,17 @@ Have an initial draft of your data description section. Your data description sh
 Data Description
 
 **Dataset Overview**
+
 Our analysis uses the Continuous NHANES (National Health and Nutrition Examination Survey) dataset collected between August 2021 and August 2023, publicly released by the U.S. Centers for Disease Control and Prevention (CDC) and the National Center for Health Statistics (NCHS). NHANES combines interviews, physical examinations, and laboratory tests to assess the health and nutritional status of adults and children in the United States.
 
 Each observation (row) in our analysis-ready dataset represents one adult respondent (age ≥ 18) who participated in the NHANES 2021–2023 cycle. Each attribute (column) represents either a self-reported questionnaire response, a derived health indicator, or one of the laboratory results used to define the target variable.
 
 **Purpose and Funding**
+
 NHANES was created to monitor the health and nutrition of the U.S. population and inform public-health policy. The survey is funded and managed by the U.S. Department of Health and Human Services, CDC, and NCHS. Our use of this dataset repurposes these nationally representative data for predictive modeling—to explore whether low-cost survey questions can predict likelihood of prediabetes and guide recommendations for further lab testing.
 
-Observations and Attributes
+**Observations and Attributes**
+
 - Observations: Each row corresponds to a single adult respondent uniquely identified by SEQN.
 - Target variable:
     - Prediabetes flag = 1 if respondent’s fasting plasma glucose (LBXGLU) is between 100–125 mg/dL or glycohemoglobin (LBXGH) is between 5.7–6.4%.
@@ -756,33 +759,52 @@ Observations and Attributes
     - Derived variables: Self-reported BMI, one-year weight change, ever-smoker (binary), current-smoker (binary)
 
 **Data Generation and Collection Process**
+
 NHANES uses a stratified multistage probability sample to ensure national representativeness. Participants provide informed consent and complete standardized interviews and physical exams in mobile examination centers. Questionnaire responses are self-reported; laboratory measures (e.g., glucose, HbA1c) are obtained from blood samples.
 
 The inclusion and content of survey modules are designed by NCHS researchers and may change slightly each cycle; these decisions influence which variables are available or missing for given respondents. Nonresponse, refusal, or “Don’t know” answers also introduce missingness in self-reported features.
 
 **Preprocessing and Cleaning**
+
 To produce an analysis-ready dataset, we performed the following steps:
-1) Merge: Combined relevant laboratory (GHB, GLU), demographic (DEMO), and questionnaire (e.g., WHQ, SLQ, SMQ, MCQ) .XPT files using SEQN as a join key.
-2) Filter: Kept only adult respondents (age ≥ 18) with available fasting glucose and/or HbA1c values. Excluded any respondent diagnosed with diabetes or taking insulin/oral medication.
-3) Standardize and clean:
+1)  Merge: Combined relevant laboratory (GHB, GLU), demographic (DEMO), and questionnaire (e.g., WHQ, SLQ, SMQ, MCQ) .XPT files using SEQN as a join key.
+2)  Filter: Kept only adult respondents (age ≥ 18) with available fasting glucose and/or HbA1c values. Excluded any respondent diagnosed with diabetes or taking insulin/oral medication.
+3)  Standardize and clean:
 - Renamed variables for clarity (e.g., PAD680 → sedentary_minutes).
 - Enforced numeric data types and set implausible values outside realistic human ranges to NaN.
 - Created derived features (bmi_from_selfreport, weight_change_1y_lb, ever_smoker, current_smoker).
 - Added labeled versions of categorical codes for readability (e.g., 1 → “Yes,” 2 → “No”).
-4) Target construction: Labeled each respondent as prediabetic = 1 if LBXGLU ∈ [100, 125] or LBXGH ∈ [5.7, 6.4]; otherwise 0.
-5) Finalize: Dropped unused columns (e.g., lab variables after target creation, pregnancy items) and exported a cleaned CSV for modeling.
+4)  Target construction: Labeled each respondent as prediabetic = 1 if LBXGLU ∈ [100, 125] or LBXGH ∈ [5.7, 6.4]; otherwise 0.
+5)  Finalize: Dropped unused columns (e.g., lab variables after target creation, pregnancy items) and exported a cleaned CSV for modeling.
 
 After filtering, the final dataset includes one row per adult respondent and a set of features derived from self-reported survey data, ready for supervised binary classification.
 
 **Awareness and Consent**
+
 All NHANES participants provide written informed consent prior to participation. They are informed that their data will be used for research and statistical analysis to improve public health. Data are de-identified before public release, and our analysis uses only the publicly available, anonymized files.
 
 **Summary**
+
 The resulting dataset represents a nationally representative adult sample with validated laboratory outcomes and extensive self-reported health and behavior variables. It provides an ideal foundation for testing whether self-reported survey data alone can identify individuals who are likely prediabetic and should be prioritized for confirmatory blood testing.
 
 # Data limitations
 
 Identify any potential problems with your dataset.
+
+* Self-Reported Bias
+Many predictors are self-reported (e.g., weight, physical activity, smoking), which introduces recall and social-desirability bias. Respondents may misestimate or underreport behaviors, reducing feature reliability.
+
+Cross-Sectional Nature
+NHANES data are collected at a single time point, so relationships between variables and prediabetes are associative rather than causal. The model cannot capture changes in health status over time.
+
+Missing or Incomplete Responses
+Nonresponse, refusals, and “Don’t know” answers create missing data patterns that may not be random, potentially introducing systematic bias or reducing model coverage for certain subgroups.
+
+Sampling and Representativeness
+Although NHANES is nationally representative, this analysis excludes individuals under 18, those already diagnosed with diabetes, and participants missing key lab values—limiting generalizability to the broader population.
+
+Measurement and Temporal Inconsistency
+Questionnaire wording and measurement protocols can differ slightly across NHANES cycles. Even within the 2021–2023 period, differences in module timing and respondent conditions (e.g., fasting state) may cause subtle inconsistencies in variables.
 
 # Exploratory data analysis
 
