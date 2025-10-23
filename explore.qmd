@@ -828,13 +828,15 @@ print(df["prediabetes_flag"].value_counts())
 print(df["prediabetes_flag"].value_counts(normalize=True))
 
 plt.figure(figsize=(5, 4))
-sns.countplot(x="prediabetes_flag", data=df, palette="Set2", hue = "prediabetes_flag", legend = False)
+sns.countplot(
+    x="prediabetes_flag", data=df, palette="Set2", hue="prediabetes_flag", legend=False
+)
 plt.title("Prediabetes Flag Distribution")
 plt.xlabel("Prediabetes Flag (0 = Normal, 1 = Prediabetic)")
 plt.show()
 
 # check missing values
-missing = df.isna().mean().sort_values(ascending= False)
+missing = df.isna().mean().sort_values(ascending=False)
 print(missing.head(10))
 
 # distribution of continuous vars
@@ -858,7 +860,7 @@ cat_vars = ["sex", "race_eth", "ever_smoker", "current_smoker"]
 
 for col in cat_vars:
     plt.figure(figsize=(6, 4))
-    sns.countplot(x=col, data=df, hue=col, palette="pastel", legend = False)
+    sns.countplot(x=col, data=df, hue=col, palette="pastel", legend=False)
     plt.title(f"{col} frequencies")
     plt.xticks(rotation=25)
     plt.tight_layout()
@@ -866,50 +868,86 @@ for col in cat_vars:
 
 # relationship between BMI and prediabetes flag
 plt.figure(figsize=(6, 4))
-sns.boxplot(data=df, x="prediabetes_flag", y="bmi_from_selfreport", hue = "prediabetes_flag", palette="coolwarm", legend=False)
+sns.boxplot(
+    data=df,
+    x="prediabetes_flag",
+    y="bmi_from_selfreport",
+    hue="prediabetes_flag",
+    palette="coolwarm",
+    legend=False,
+)
 plt.title("BMI vs Prediabetes Status")
 plt.xlabel("Prediabetes Flag (0=No, 1=Yes)")
 plt.show()
 
 # relationship between age and prediabetes flag
 plt.figure(figsize=(6, 4))
-sns.boxplot(data=df, x="prediabetes_flag", y="age_years", hue = "prediabetes_flag", palette="mako", legend=False )
+sns.boxplot(
+    data=df,
+    x="prediabetes_flag",
+    y="age_years",
+    hue="prediabetes_flag",
+    palette="mako",
+    legend=False,
+)
 plt.title("Age vs Prediabetes Status")
 plt.xlabel("Prediabetes Flag (0=No, 1=Yes)")
 plt.show()
 
 # smoking and prediabetes
 plt.figure(figsize=(6, 4))
-sns.barplot(data=df, x="ever_smoker", y="prediabetes_flag", hue="ever_smoker", palette="Set2", legend=False)
+sns.barplot(
+    data=df,
+    x="ever_smoker",
+    y="prediabetes_flag",
+    hue="ever_smoker",
+    palette="Set2",
+    legend=False,
+)
 plt.title("Prediabetes Rate by Smoking History")
 plt.xlabel("Ever Smoked (1=Yes, 0=No)")
 plt.ylabel("Mean Prediabetes Flag")
 plt.show()
 
-#sedentary minutes vs prediabetes
+# sedentary minutes vs prediabetes
 plt.figure(figsize=(6, 4))
-sns.boxplot(data=df, x="prediabetes_flag", y="sedentary_minutes",
-            hue="prediabetes_flag", palette="Set2", legend=False)
+sns.boxplot(
+    data=df,
+    x="prediabetes_flag",
+    y="sedentary_minutes",
+    hue="prediabetes_flag",
+    palette="Set2",
+    legend=False,
+)
 plt.title("Sedentary Minutes vs Prediabetes Status")
 plt.xlabel("Prediabetes Flag (0=No, 1=Yes)")
 plt.ylabel("Sedentary Minutes per Day")
 plt.tight_layout()
 plt.show()
 
-#average dirnks per day vs prediabetes
+# average dirnks per day vs prediabetes
 plt.figure(figsize=(6, 4))
-sns.barplot(data=df, x="prediabetes_flag", y="drinks_per_day_12mo",
-            hue="prediabetes_flag", palette="coolwarm", legend=False, estimator=np.mean, errorbar=None)
+sns.barplot(
+    data=df,
+    x="prediabetes_flag",
+    y="drinks_per_day_12mo",
+    hue="prediabetes_flag",
+    palette="coolwarm",
+    legend=False,
+    estimator=np.mean,
+    errorbar=None,
+)
 plt.title("Average Daily Drinks vs Prediabetes Status")
 plt.xlabel("Prediabetes Flag (0=No, 1=Yes)")
 plt.ylabel("Average Drinks per Day (Past 12 Months)")
 plt.tight_layout()
 plt.show()
 
-#prediabetes by race and ethnicity
+# prediabetes by race and ethnicity
 plt.figure(figsize=(7, 4))
-sns.countplot(x="race_eth", data=df, hue="prediabetes_flag",
-              palette="Set2", legend=False)
+sns.countplot(
+    x="race_eth", data=df, hue="prediabetes_flag", palette="Set2", legend=False
+)
 plt.title("Prediabetes Counts by Race/Ethnicity")
 plt.xlabel("Race/Ethnicity")
 plt.ylabel("Count")
@@ -917,17 +955,17 @@ plt.xticks(rotation=25)
 plt.tight_layout()
 plt.show()
 
-#prediabetes by hypertension status (blood pressure)
+# prediabetes by hypertension status (blood pressure)
 plt.figure(figsize=(6, 4))
 sns.barplot(
-    data=df[df["ever_high_bp_code"].isin([1, 2])], #filter to keep valid yes/no
+    data=df[df["ever_high_bp_code"].isin([1, 2])],  # filter to keep valid yes/no
     x="ever_high_bp_ans",
     y="prediabetes_flag",
     hue="ever_high_bp_ans",
     palette="Set2",
     legend=False,
     estimator=np.mean,
-    errorbar=None
+    errorbar=None,
 )
 plt.title("Prediabetes Rate by Hypertension Status")
 plt.xlabel("Ever Had High Blood Pressure")
@@ -935,17 +973,17 @@ plt.ylabel("Mean Prediabetes Flag")
 plt.tight_layout()
 plt.show()
 
-#prediabetes vs cholestrol status
-plt.figure(figsize=(6, 4)) 
+# prediabetes vs cholestrol status
+plt.figure(figsize=(6, 4))
 sns.barplot(
-    data=df[df["ever_high_chol_code"].isin([1, 2])], #filter to keep valid yes/no
+    data=df[df["ever_high_chol_code"].isin([1, 2])],  # filter to keep valid yes/no
     x="ever_high_chol_code",
     y="prediabetes_flag",
     hue="ever_high_chol_code",
     palette="pastel",
     legend=False,
     estimator=np.mean,
-    errorbar=None
+    errorbar=None,
 )
 plt.title("Prediabetes Rate by High Cholesterol Status")
 plt.xlabel("Ever Had High Cholesterol (1=Yes, 2=No)")
@@ -953,16 +991,168 @@ plt.ylabel("Mean Prediabetes Flag")
 plt.tight_layout()
 plt.show()
 
-#bmi vs age by prediabetes status
+# bmi vs age by prediabetes status
 plt.figure(figsize=(6, 4))
-sns.scatterplot(data=df, x="age_years", y="bmi_from_selfreport",
-                hue="prediabetes_flag", palette="coolwarm", alpha=0.6)
+sns.scatterplot(
+    data=df,
+    x="age_years",
+    y="bmi_from_selfreport",
+    hue="prediabetes_flag",
+    palette="coolwarm",
+    alpha=0.6,
+)
 plt.title("BMI vs Age by Prediabetes Status")
 plt.xlabel("Age (years)")
 plt.ylabel("BMI (from Self-Report)")
 plt.tight_layout()
 plt.show()
 
+#age distribution by prediabetes
+plt.figure(figsize=(6, 4))
+sns.kdeplot(
+    data=df,
+    x="age_years",
+    hue="prediabetes_flag",
+    fill=True,
+    common_norm=False,
+    alpha=0.4,
+    linewidth=1
+)
+plt.title("Age Distribution by Prediabetes Status")
+plt.xlabel("Age (years)")
+plt.ylabel("Density")
+plt.tight_layout()
+plt.show()
+
+#sleep vs prediabetes status
+plt.figure(figsize=(6, 4))
+sns.boxplot(
+    data=df,
+    x="prediabetes_flag",
+    y="sleep_hours_weekdays",
+    hue="prediabetes_flag",
+    palette="mako",
+    legend=False
+)
+plt.title("Sleep Hours vs Prediabetes Status")
+plt.xlabel("Prediabetes Flag (0=No, 1=Yes)")
+plt.ylabel("Sleep Hours (Weekdays)")
+plt.tight_layout()
+plt.show()
+
+#prediabetes by sex
+plt.figure(figsize=(6, 4))
+sns.barplot(
+    data=df,
+    x="sex",
+    y="prediabetes_flag",
+    hue="sex",
+    estimator=np.mean,
+    errorbar=None,
+    palette="pastel",
+    legend=False
+)
+plt.title("Prediabetes Rate by Sex")
+plt.xlabel("Sex")
+plt.ylabel("Prediabetes Rate")
+plt.tight_layout()
+plt.show()
+
+#depression indicator vs prediatbetes
+plt.figure(figsize=(6, 4))
+sns.barplot(
+    data=df[df["dpq_feeling_down_code"].isin([1, 2])],
+    x="dpq_feeling_down_ans",
+    y="prediabetes_flag",
+    hue="dpq_feeling_down_ans",
+    estimator=np.mean,
+    errorbar=None,
+    palette="pastel",
+    legend=False
+)
+plt.title("Prediabetes Rate by Depression Symptom (Feeling Down)")
+plt.xlabel("Felt Down/Depressed in Past 2 Weeks (1=Yes, 2=No)")
+plt.ylabel("Mean Prediabetes Flag")
+plt.tight_layout()
+plt.show()
+
+#prediabetes vs poor appetite
+plt.figure(figsize=(6, 4))
+sns.barplot(
+    data=df[df["dpq_poor_appetite_code"].isin([1, 2])],
+    x="dpq_poor_appetite_ans",
+    y="prediabetes_flag",
+    hue="dpq_poor_appetite_ans",
+    estimator=np.mean,
+    errorbar=None,
+    palette="pastel",
+    legend=False
+)
+plt.title("Prediabetes Rate by Appetite Changes (Depression Symptom)")
+plt.xlabel("Poor Appetite or Overeating (1=Yes, 2=No)")
+plt.ylabel("Mean Prediabetes Flag")
+plt.tight_layout()
+plt.show()
+
+# prediabetes by liver condition history
+plt.figure(figsize=(6, 4))
+sns.barplot(
+    data=df[df["ever_liver_condition_code"].isin([1, 2])],
+    x="ever_liver_condition_ans",
+    y="prediabetes_flag",
+    hue="ever_liver_condition_ans",
+    estimator=np.mean,
+    errorbar=None,
+    palette="Set3",
+    legend=False,
+    order=["Yes", "No"],
+    hue_order=["Yes", "No"]
+)
+plt.title("Prediabetes Rate by Liver Condition History")
+plt.xlabel("Ever Had Liver Condition (1=Yes, 2=No)")
+plt.ylabel("Mean Prediabetes Flag")
+plt.tight_layout()
+plt.show()
+
+# prediabetes by kidney weakness history
+plt.figure(figsize=(6, 4))
+sns.barplot(
+    data=df[df["ever_weak_kidneys_code"].isin([1, 2])],
+    x="ever_weak_kidneys_ans",
+    y="prediabetes_flag",
+    hue="ever_weak_kidneys_ans",
+    estimator=np.mean,
+    errorbar=None,
+    palette="pastel",
+    legend=False,
+    order=["Yes", "No"],
+    hue_order=["Yes", "No"]
+)
+plt.title("Prediabetes Rate by Kidney Weakness History")
+plt.xlabel("Ever Had Weak Kidneys (1=Yes, 2=No)")
+plt.ylabel("Mean Prediabetes Flag")
+plt.tight_layout()
+plt.show()
+
+# thyroid problem by prediabetes
+plt.figure(figsize=(6, 4))
+sns.barplot(
+    data=df[df["ever_thyroid_problem_code"].isin([1, 2])],
+    x="ever_thyroid_problem_ans",
+    y="prediabetes_flag",
+    hue="ever_thyroid_problem_ans",
+    estimator=np.mean,
+    errorbar=None,
+    palette="coolwarm",
+    legend=False,
+    order=["Yes", "No"],
+    hue_order=["Yes", "No"]
+)
+plt.title("Prediabetes Rate by Thyroid Problem History")
+plt.xlabel("Ever Had Thyroid Problem (1=Yes, 2=No)")
+plt.ylabel("Mean Prediabetes Flag")
+plt.tight_layout()
+plt.show()
 ```
 
 # Questions for reviewers
