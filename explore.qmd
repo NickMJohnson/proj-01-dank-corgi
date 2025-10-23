@@ -963,7 +963,6 @@ plt.ylabel("BMI (from Self-Report)")
 plt.tight_layout()
 plt.show()
 
-
 ```
 
 # Questions for reviewers
@@ -971,10 +970,15 @@ plt.show()
 List specific questions for your peer reviewers and project mentor to answer in giving you feedback on this phase.
 
 1. Based on our EDA, what features do you think look most predictive? 
+
 2. For our survey codes such as 7 = Refused and 9 = Don't know, do you think we should drop, impute, or make an unkown category for the features that are affected with a large amount of missing information?
+
 3. Is bmi_from_selfreport adequate, or should we also keep measured bmi and compare both in the model?
+
 4. Any fairness concerns such as performance gaps across sex or race_eth that we should measure and report?
+
 5. Should we test model fairness across race_eth or sex categories? If so, what’s one way to visualize or quantify potential bias early (e.g., separate ROC curves)?
+
 6. From the EDA plots, which 3–5 features seem to have the clearest visual separation between prediabetic and non-prediabetic respondents? Which ones seem least useful?
 
 
