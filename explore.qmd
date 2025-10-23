@@ -886,6 +886,85 @@ plt.xlabel("Ever Smoked (1=Yes, 0=No)")
 plt.ylabel("Mean Prediabetes Flag")
 plt.show()
 
+
+#sedentary minutes vs prediabetes
+plt.figure(figsize=(6, 4))
+sns.boxplot(data=df, x="prediabetes_flag", y="sedentary_minutes",
+            hue="prediabetes_flag", palette="Set2", legend=False)
+plt.title("Sedentary Minutes vs Prediabetes Status")
+plt.xlabel("Prediabetes Flag (0=No, 1=Yes)")
+plt.ylabel("Sedentary Minutes per Day")
+plt.tight_layout()
+plt.show()
+
+#average dirnks per day vs prediabetes
+plt.figure(figsize=(6, 4))
+sns.barplot(data=df, x="prediabetes_flag", y="drinks_per_day_12mo",
+            hue="prediabetes_flag", palette="coolwarm", legend=False, estimator=np.mean, errorbar=None)
+plt.title("Average Daily Drinks vs Prediabetes Status")
+plt.xlabel("Prediabetes Flag (0=No, 1=Yes)")
+plt.ylabel("Average Drinks per Day (Past 12 Months)")
+plt.tight_layout()
+plt.show()
+
+#prediabetes by race and ethnicity
+plt.figure(figsize=(7, 4))
+sns.countplot(x="race_eth", data=df, hue="prediabetes_flag",
+              palette="Set2", legend=False)
+plt.title("Prediabetes Counts by Race/Ethnicity")
+plt.xlabel("Race/Ethnicity")
+plt.ylabel("Count")
+plt.xticks(rotation=25)
+plt.tight_layout()
+plt.show()
+
+#prediabetes by hypertension status (blood pressure)
+plt.figure(figsize=(6, 4))
+sns.barplot(
+    data=df[df["ever_high_bp_code"].isin([1, 2])], #filter to keep valid yes/no
+    x="ever_high_bp_ans",
+    y="prediabetes_flag",
+    hue="ever_high_bp_ans",
+    palette="Set2",
+    legend=False,
+    estimator=np.mean,
+    errorbar=None
+)
+plt.title("Prediabetes Rate by Hypertension Status")
+plt.xlabel("Ever Had High Blood Pressure")
+plt.ylabel("Mean Prediabetes Flag")
+plt.tight_layout()
+plt.show()
+
+#prediabetes vs cholestrol status
+plt.figure(figsize=(6, 4)) 
+sns.barplot(
+    data=df[df["ever_high_chol_code"].isin([1, 2])], #filter to keep valid yes/no
+    x="ever_high_chol_code",
+    y="prediabetes_flag",
+    hue="ever_high_chol_code",
+    palette="pastel",
+    legend=False,
+    estimator=np.mean,
+    errorbar=None
+)
+plt.title("Prediabetes Rate by High Cholesterol Status")
+plt.xlabel("Ever Had High Cholesterol (1=Yes, 2=No)")
+plt.ylabel("Mean Prediabetes Flag")
+plt.tight_layout()
+plt.show()
+
+#bmi vs age by prediabetes status
+plt.figure(figsize=(6, 4))
+sns.scatterplot(data=df, x="age_years", y="bmi_from_selfreport",
+                hue="prediabetes_flag", palette="coolwarm", alpha=0.6)
+plt.title("BMI vs Age by Prediabetes Status")
+plt.xlabel("Age (years)")
+plt.ylabel("BMI (from Self-Report)")
+plt.tight_layout()
+plt.show()
+
+
 ```
 
 # Questions for reviewers
