@@ -442,16 +442,59 @@ rf_table
 
 # Compare
 ```{python}
+def row_for(df, name):
+    m = df[df["workflow"] == name]
+    if m.empty:
+        return {
+            "workflow": name,
+            "acc": np.nan,
+            "bacc": np.nan,
+            "brier": np.nan,
+            "roc_auc": np.nan,
+            "pr_auc": np.nan,
+        }
+    return m.iloc[0].to_dict()
 
-cv_compare = pd.DataFrame([
-    {"workflow": "LogReg L2 (LR-CV)",            **penalized_l_table[penalized_l_table.workflow=="LogReg L2 (LR-CV)"].iloc[0].to_dict()},
-    {"workflow": "LogReg ElasticNet",            **penalized_l_table[penalized_l_table.workflow=="LogReg ElasticNet"].iloc[0].to_dict()},
-    {"workflow": "LogReg EN + Calib",            **penalized_l_table[penalized_l_table.workflow=="LogReg EN + Calib"].iloc[0].to_dict()},
-    {"workflow": "HGB T1 (balanced)",            **boosted_t_table[boosted_t_table.workflow=="HGB T1 (balanced)"].iloc[0].to_dict()},
-    {"workflow": "HGB T2 (deeper, lower LR)",    **boosted_t_table[boosted_t_table.workflow=="HGB T2 (deeper, lower LR)"].iloc[0].to_dict()},
-    {"workflow": "RandomForest (tuned)",         **rf_table.iloc[0].to_dict()},
-]).sort_values(["roc_auc", "brier"], ascending=[False, True]).reset_index(drop=True)
 
+cv_compare = (
+    pd.DataFrame(
+        [
+            {
+                "workflow": "LogReg L2 (LR-CV)",
+                **row_for(penalized_l_table, "LogReg L2 (LR-CV)"),
+            },
+            {
+                "workflow": "LogReg ElasticNet",
+                **row_for(penalized_l_table, "LogReg ElasticNet"),
+            },
+            {
+                "workflow": "LogReg EN + Calib",
+                **row_for(penalized_l_table, "LogReg EN + Calib"),
+            },
+            {
+                "workflow": "HGB T1 (balanced, rich grid)",
+                **row_for(boosted_t_table, "HGB T1 (balanced, rich grid)"),
+            },
+            {
+                "workflow": "HGB T2 (deeper, rich grid)",
+                **row_for(boosted_t_table, "HGB T2 (deeper, rich grid)"),
+            },
+            {
+                "workflow": "RandomForest (tuned)",
+                **(
+                    rf_table.iloc[0].to_dict()
+                    if ("rf_table" in globals() and not rf_table.empty)
+                    else {}
+                ),
+            },
+        ]
+    )
+    .dropna(subset=["roc_auc", "brier"], how="any")
+    .sort_values(["roc_auc", "brier"], ascending=[False, True])
+    .reset_index(drop=True)
+)
+
+print("Workflows found:", list(cv_compare["workflow"]))
 cv_compare
 
 
