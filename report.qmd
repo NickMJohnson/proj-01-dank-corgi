@@ -396,26 +396,45 @@ boosted_t_table
 # Random forest model
 ```{python}
 
-pipe_rf = Pipeline([
-    ("prep", preprocess_tree),
-    ("clf", RandomForestClassifier(random_state=RANDOM_STATE)),
-])
+pipe_rf = Pipeline(
+    [
+        ("prep", preprocess_tree),
+        (
+            "clf",
+            RandomForestClassifier(random_state=RANDOM_STATE, class_weight="balanced"),
+        ),
+    ]
+)
+
 grid_rf = {
     "clf__n_estimators": [300, 600],
     "clf__max_depth": [None, 12],
     "clf__min_samples_leaf": [1, 2, 5],
     "clf__max_features": ["sqrt", 0.3],
 }
-gsRF = GridSearchCV(pipe_rf, grid_rf, scoring="roc_auc", cv=cv, n_jobs=1, refit=True).fit(X_train, y_train)
-RF_acc, RF_brier, RF_auc, RF_pra = cv_report(gsRF.best_estimator_, X_train, y_train, cv)
 
-rf_table = pd.DataFrame([{
-    "workflow": "RandomForest (tuned)",
-    "acc": RF_acc,
-    "brier": RF_brier,
-    "roc_auc": RF_auc,
-    "pr_auc": RF_pra,
-}])
+gsRF = GridSearchCV(
+    pipe_rf, grid_rf, scoring="roc_auc", cv=3, n_jobs=-1, refit=True
+).fit(X_train, y_train)
+
+# cv_report returns: acc, bacc, brier, auc, pr
+RF_acc, RF_bacc, RF_brier, RF_auc, RF_pra = cv_report(
+    gsRF.best_estimator_, X_train, y_train, cv
+)
+
+rf_table = pd.DataFrame(
+    [
+        {
+            "workflow": "RandomForest (tuned)",
+            "acc": RF_acc,
+            "bacc": RF_bacc,
+            "brier": RF_brier,
+            "roc_auc": RF_auc,
+            "pr_auc": RF_pra,
+        }
+    ]
+)
+
 rf_table
 
 
