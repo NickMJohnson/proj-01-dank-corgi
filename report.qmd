@@ -1,9 +1,11 @@
 ---
-title: "Project title"
+title: "INFO 4940 Project 1 Report"
 ---
 
 # Setup
+
 Load packages and data:
+
 ```{python}
 
 import os, math, textwrap, warnings
@@ -36,7 +38,9 @@ np.random.seed(42)
 pd.set_option("display.max_columns", 200)
 
 ```
-# Load and Clean Data 
+
+# Load and Clean Data
+
 ```{python}
 # Load dataset
 CSV_PATH = "data-raw/nhanes2123_prediabetes_features_labeled_clean.csv"  
@@ -118,6 +122,7 @@ df.to_csv("data-raw/nhanes2123_surveyonly_clean.csv", index=False)
 ```
 
 # Train/Test Split and Cross Validation
+
 ```{python}
 
 RANDOM_STATE = 42
@@ -137,7 +142,9 @@ cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
 print(f"Total: {len(X)} | Train: {len(X_train)} | Test: {len(X_test)}")
 
 ```
+
 # Preprocessors
+
 ```{python}
 
 # Numeric: median impute and scale
@@ -167,6 +174,7 @@ preprocess
 ```
 
 # Null-model
+
 ```{python}
 null_pipe = Pipeline([
     ("prep", preprocess),
@@ -199,6 +207,7 @@ null_results
 ```
 
 # Penalized Logistic Regression
+
 ```{python}
 
 # CV report for probability and threshhold metrics
@@ -267,7 +276,9 @@ penalized_l_table
 
 
 ```
+
 # Boosted Trees Model
+
 ```{python}
 
 # Preprocessing for trees
@@ -396,6 +407,7 @@ boosted_t_table
 ```
 
 # Random forest model
+
 ```{python}
 
 pipe_rf = Pipeline(
@@ -443,6 +455,7 @@ rf_table
 ```
 
 # Compare
+
 ```{python}
 def row_for(df, name):
     m = df[df["workflow"] == name]
@@ -503,6 +516,7 @@ cv_compare
 ```
 
 # Finalize test
+
 ```{python}
 
 candidates = {
@@ -533,9 +547,8 @@ pd.DataFrame([test_prob])
 
 ```
 
+# Thresholded-Selection
 
-
-#  Thresholded-Selection
 ```{python}
 
 X_tr, X_val, y_tr, y_val = train_test_split(
@@ -576,7 +589,9 @@ test_thresh = {
 pd.DataFrame([test_thresh])
 
 ```
+
 # Group Metrics
+
 ```{python}
 
 # Compute precision/recall/F1
@@ -625,6 +640,7 @@ display(gm_race)
 ```
 
 # PR, Roc Curve and Calibration Plot
+
 ```{python}
 #PR
 prec_t, rec_t, _ = precision_recall_curve(y_test, p_test)
@@ -670,4 +686,3 @@ plt.show()
 
 
 ```
-
