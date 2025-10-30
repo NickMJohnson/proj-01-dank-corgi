@@ -253,9 +253,18 @@ Our resampling pipeline — **stratified 80/20 split → 5-fold CV → recall-ca
 Our modeling strategy balances **interpretability**, **robustness**, and **public-health relevance**. We intentionally tested both **linear models** (like Logistic Regression and Elastic Net) and **nonlinear ensemble models** (Random Forest and HistGradientBoosting) to understand not just how accurately we can predict prediabetes, but **why** certain features matter.  
 
 **Why these models:**  
-- **Logistic Regression (L2)** was chosen as the primary baseline because it is highly interpretable, each coefficient represents the direction and strength of association between a survey feature and prediabetes likelihood. This transparency makes it suitable for healthcare settings, where practitioners must explain decisions.  
-- **Elastic Net** extends logistic regression by allowing sparse feature selection, balancing simplicity (via L1 regularization) with stability (via L2). This helps surface which questionnaire features carry the most predictive power without overfitting noise.  
-- **Random Forest** and **HistGradientBoosting** were included to test whether nonlinear interactions such as, how age and sleep jointly influence metabolic risk, could outperform linear methods. These models handle complex relationships that might be missed by logistic regression, but their lack of interpretability makes them secondary candidates for real-world deployment.  
+
+- **Logistic Regression (L2):**  
+  Chosen as the primary baseline because it is highly interpretable — each coefficient represents the direction and strength of association between a survey feature and prediabetes likelihood.  
+  This transparency makes it suitable for healthcare settings, where practitioners must explain decisions.  
+
+- **Elastic Net:**  
+  Extends logistic regression by allowing sparse feature selection, balancing simplicity through L1 regularization with stability through L2.  
+  This helps surface which questionnaire features carry the most predictive power without overfitting noise.  
+
+- **Random Forest** and **HistGradientBoosting:**  
+  Included to test whether nonlinear interactions (e.g., how age and sleep jointly influence metabolic risk) could outperform linear methods.  
+  These models capture complex relationships that might be missed by logistic regression but are less interpretable, making them secondary candidates for deployment in healthcare contexts.
 
 **Shared preprocessing**  
 - Numeric: Missing values were filled using the median, with an added indicator for missingness in linear models, and all numeric features were standardized for consistent scaling. We use median imputation, which is robust to outliers, to keep rows with missing values, add missingness indicators so linear models can learn that “not answered” itself carries signal, and standardize all numeric features so penalties in logistic/elastic-net treat predictors on the same scale (e.g., age and sedentary_minutes contribute comparably during training).
