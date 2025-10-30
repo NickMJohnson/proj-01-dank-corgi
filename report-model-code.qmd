@@ -273,8 +273,6 @@ penalized_l_table = (
 )
 penalized_l_table
 
-
-
 ```
 
 # Boosted Trees Model

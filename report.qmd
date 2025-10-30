@@ -1,6 +1,6 @@
 ---
 title: "INFO 4490 Project 1: Report"
-authors: Zhalae Daneshvari, Nick Johnson, Jolene Le
+authors: Zhalae Daneshvari, Nick Johnson, Jolene Ie
 ---
 
 # Objective(s)
@@ -21,6 +21,14 @@ Our specific objectives are to:
 Prediabetes is widespread yet often undiagnosed, as many adults do not undergo routine blood testing. A survey-based model that flags individuals as *likely prediabetic* provides a simple, accessible first step—allowing clinics and community health programs to focus lab resources on those most at risk, promote earlier diagnosis, and help prevent progression to Type 2 diabetes.
 
 # Data Description
+
+**Data:** Continuous NHANES (CDC/NCHS), Aug 2021–Aug 2023. One row per adult respondent (age ≥ 18), identified by `SEQN`. The dataset contains 5,099 adult respondents. 
+**Target:** `prediabetes_flag` (defined from lab variables only for target construction, then labs removed from predictors).  
+**Predictors (survey-only):**  
+- **Numeric:** age, BMI from self-report, 1-year weight change, weekday sleep hours, sedentary minutes, drinks per day (12 mo).  
+- **Categorical:** sex, race/ethnicity, smoking indicators, selected medical history (BP, cholesterol, asthma, thyroid, liver), weight-loss attempt, and PHQ-9 “poor appetite”, etc.  
+**Prevalence:** ~0.423 (class 1), where 43% of all people in the dataset are labeled as "1", which is "likely prediabetic"
+**Provenance & license:** CDC/NCHS public domain; de-identified and IRB-approved protocols.
 
 ## Dataset Overview
 
@@ -238,4 +246,61 @@ Our resampling pipeline — **stratified 80/20 split → 5-fold CV → recall-ca
 
 # Modeling Strategies
 
+**Shared preprocessing**  
+- Numeric: median imputation (+ missing indicators for linear models), standardization for penalized regression.  
+- Categorical: constant imputation (“Unknown”), cast to string, **OHE** with minimum frequency threshold to collapse rare levels.
+
+**Models & tuning**  
+- **Logistic Regression (L2):** `Cs = {0.1,1,10}`, `lbfgs`, CV scored by ROC AUC.  
+- **Elastic Net LR:** grid on `C = {0.5,1,2}`, `l1_ratio = {0.2,0.5,0.8}` (`saga`); optional **Platt calibration**.  
+- **HistGradientBoosting:** two grids (balanced vs deeper) over learning rate, max leaves, min samples leaf, L2.  
+- **Random Forest:** `n_estimators ∈ {300,600}`, `max_depth ∈ {None,12}`, `min_samples_leaf ∈ {1,2,5}`, `max_features ∈ {"sqrt",0.3}`, `class_weight="balanced"`.
+
+**Selection metrics**: prioritize **ROC AUC** (discrimination) and **Brier** (calibration); report **PR AUC** given moderate imbalance.
+
 # Initial Results
+
+**Null model (majority class, CV)**
+- Accuracy **0.577**, ROC AUC **0.500**, PR AUC **0.423**, Brier **0.423**.
+
+## Cross-validation comparison (training folds; mean)
+
+| Workflow                  | ROC AUC | Brier  | Acc    | Bal Acc |
+|---|---:|---:|---:|---:|
+| **LogReg L2 (LR-CV)**     | **0.708** | **0.214** | 0.656 | 0.640 |
+| LogReg EN + Calib         | 0.707 | 0.214 | 0.656 | 0.638 |
+| LogReg ElasticNet         | 0.707 | 0.214 | 0.658 | 0.641 |
+| RandomForest (tuned)      | 0.699 | 0.218 | 0.651 | 0.654 |
+| HGB T1 (balanced)         | 0.690 | 0.219 | 0.644 | 0.631 |
+| HGB T2 (deeper)           | 0.676 | 0.223 | 0.629 | 0.611 |
+
+**Winner:** **LogReg L2 (LR-CV)** by ROC AUC and Brier.
+
+## Test set (held-out)
+
+- **Probabilities (no thresholding)**  
+  ROC AUC **0.717**, PR AUC **0.615**, Brier **0.210**, prevalence **0.423**.
+
+- **Thresholded for recall target (selected on validation)**  
+  Threshold **0.3833** → **Precision 0.552**, **Recall 0.763**, **F1 0.641**.  
+  Confusion matrix: **TN 322, FP 267, FN 102, TP 329**.
+
+**Interpretation:** The penalized LR generalizes well; after tilting toward higher recall (screening), precision remains acceptable.
+
+## Group metrics (test, thresholded)
+
+- **Sex** — Female: P **0.537**, R **0.732**, F1 **0.619**; Male: P **0.566**, R **0.793**, F1 **0.660**.  
+- **Race/ethnicity (top 6 by n)** —  
+  NH White: P **0.518**, R **0.754**, F1 **0.614**; NH Black: P **0.636**, R **0.792**, F1 **0.706**;  
+  Other Hisp.: P **0.526**, R **0.769**, F1 **0.625**; Mex. Am.: P **0.667**, R **0.780**, F1 **0.719**;  
+  NH Asian: P **0.525**, R **0.778**, F1 **0.627**; Other/Multiracial: P **0.708**, R **0.739**, F1 **0.723**.
+
+**Note:** Recall is consistently high (desired); precision varies moderately—monitor as we iterate features/thresholds.
+
+## Curves & calibration
+
+![ROC curve (test)](roc_curve_test.png)  
+![Precision–Recall curve (test)](pr_curve_test.png)  
+![Calibration plot (test)](calibration_test.png)
+
+**Calibration:** Points are reasonably close to the diagonal; **Brier ≈ 0.21** indicates acceptable overall calibration. Platt calibration on the elastic net model didn’t materially improve global metrics; can revisit calibration on the chosen LR if tighter probability estimates are required.
