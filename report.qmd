@@ -250,22 +250,42 @@ Our resampling pipeline — **stratified 80/20 split → 5-fold CV → recall-ca
 
 # Modeling Strategies
 
+Our modeling strategy balances **interpretability**, **robustness**, and **public-health relevance**. We intentionally tested both **linear models** (like Logistic Regression and Elastic Net) and **nonlinear ensemble models** (Random Forest and HistGradientBoosting) to understand not just how accurately we can predict prediabetes, but **why** certain features matter.  
+
+**Why these models:**  
+- **Logistic Regression (L2)** was chosen as the primary baseline because it is highly interpretable, each coefficient represents the direction and strength of association between a survey feature and prediabetes likelihood. This transparency makes it suitable for healthcare settings, where practitioners must explain decisions.  
+- **Elastic Net** extends logistic regression by allowing sparse feature selection, balancing simplicity (via L1 regularization) with stability (via L2). This helps surface which questionnaire features carry the most predictive power without overfitting noise.  
+- **Random Forest** and **HistGradientBoosting** were included to test whether nonlinear interactions such as, how age and sleep jointly influence metabolic risk, could outperform linear methods. These models handle complex relationships that might be missed by logistic regression, but their lack of interpretability makes them secondary candidates for real-world deployment.  
+
 **Shared preprocessing**  
-- Numeric: Missing values were filled using the median, with an added indicator for missingness in linear models, and all numeric features were standardized for consistent scaling.   
-- Categorical: Missing values were replaced with “Unknown,” converted to strings, and one-hot encoded, with rare categories grouped together using a minimum frequency threshold.  
+- Numeric: Missing values were filled using the median, with an added indicator for missingness in linear models, and all numeric features were standardized for consistent scaling. We use median imputation, which is robust to outliers, to keep rows with missing values, add missingness indicators so linear models can learn that “not answered” itself carries signal, and standardize all numeric features so penalties in logistic/elastic-net treat predictors on the same scale (e.g., age and sedentary_minutes contribute comparably during training).
+
+- Categorical: Missing values were replaced with “Unknown,” converted to strings, and one-hot encoded, with rare categories grouped together using a minimum frequency threshold. We impute missing categories as “Unknown” to preserve sample size and makes absence explicit, cast to strings for consistent handling, then one-hot encode so linear models can learn separate weights per level. We also set a minimum frequency threshold to merge ultra-rare levels and this reduces noise and variance, improving stability and generalization across small subgroups.
+
+- Why this setup: These steps match our screening goal: keep as many respondents as possible, avoid information leakage, and produce features that are interpretable with clear coefficients, and robust, which reduces the risk of overfit to smaller categories.
+
+**Feature engineering and real-world relevance**  
+Feature creation focused on aligning predictors with **realistic screening contexts** and the project’s broader **public health objective**: identifying adults likely to have prediabetes using self-reported, survey-based information as a practical and scalable screening tool. Derived variables such as `weight_change_1y_lb`, `ever_smoker`, and `bmi_from_selfreport` translate abstract questionnaire data into interpretable, behavior-based risk indicators that mirror what clinicians consider during real-world screenings. Including mental and lifestyle factors like `dpq_poor_appetite_ans` or sedentary time connects the model to emerging research on how psychological and behavioral patterns affect glucose regulation. Together, these engineered features make the model both **clinically meaningful** and **actionable**, bridging the gap between statistical prediction and practical screening tools.
 
 **Models & tuning**  
-- **Logistic Regression (L2):** `Cs = {0.1,1,10}`, `lbfgs`, CV scored by ROC AUC.  
-- **Elastic Net LR:** grid on `C = {0.5,1,2}`, `l1_ratio = {0.2,0.5,0.8}` (`saga`);  
-- **HistGradientBoosting:** two grids (balanced vs deeper) over learning rate, max leaves, min samples leaf, L2.  
-- **Random Forest:** `n_estimators ∈ {300,600}`, `max_depth ∈ {None,12}`, `min_samples_leaf ∈ {1,2,5}`, `max_features ∈ {"sqrt",0.3}`, `class_weight="balanced"`.
 
-**Selection metrics**: prioritize **ROC AUC** (discrimination) and **Brier** (calibration); report **PR AUC** given moderate imbalance.
+- **Logistic Regression (L2):** `Cs = {0.1,1,10}`, `lbfgs`, CV scored by ROC AUC. L2 regularization helps stabilize coefficients and prevent overfitting, creating an interpretable yet robust baseline for identifying prediabetes risk factors.  
+- **Elastic Net LR:** grid on `C = {0.5,1,2}`, `l1_ratio = {0.2,0.5,0.8}` (`saga`). This model encourages more stable solutions by mixing L1 (feature selection) and L2 (shrinkage), helpful when OHE expands the feature space.  
+- **HistGradientBoosting:** two grids (a “balanced” and a “deeper” setting) over learning rate, max leaves, min samples leaf, and L2 regularization. These explore non-linear effects and interactions (e.g., age × sleep), with early stopping to curb overfit.  
+- **Random Forest:** grid over `n_estimators`, `max_depth`, `min_samples_leaf`, and `max_features`, with `class_weight="balanced"` to counter class skew. RF offers a variance-tolerant non-linear baseline and a check on whether complex structure beats linear interpretability.  
+**Selection metrics**: We evaluated models using three complementary metrics that together capture discrimination, calibration, and real-world screening value.  
+
+- **ROC AUC (primary discrimination):** Measures how well models rank prediabetes risk across all thresholds, making it ideal for model selection before deciding on an operating threshold.  
+- **Brier score (calibration):** Penalizes probability errors—lower values indicate better calibration. This metric shows whether predicted probabilities (e.g., 0.70) reflect actual observed risk, which is important when using outputs to guide referral intensity.  
+- **PR AUC (class-focused):** Given the ~42% prevalence of class 1, PR AUC summarizes the precision–recall trade-off for the positive class, highlighting how many false positives occur at higher sensitivity levels.  
 
 # Initial Results
 
 **Null model (majority class, CV)**
 - Accuracy **0.577**, ROC AUC **0.500**, PR AUC **0.423**, Brier **0.423**.
+
+
+
 
 ## Cross-validation comparison (training folds; mean)
 
