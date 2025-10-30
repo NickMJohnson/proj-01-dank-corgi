@@ -128,6 +128,85 @@ Even though our dataset is de-identified, any predictive model built on demograp
 
 This dataset represents a nationally representative, ethically collected sample with standardized measures and broad public-health value. By leveraging its self-reported features for predictive modeling, this project demonstrates how **publicly funded, open-source data** can support equitable and cost-effective chronic disease screening.
 
+# Decisions Based on EDA
+
+Our exploratory data analysis (EDA) guided a series of deliberate decisions to prepare the NHANES 2021–2023 survey data for predictive modeling.  
+
+### 1. Variable Inclusion and Exclusion
+
+**EDA findings:**  
+Initial inspection showed that many raw NHANES modules contain redundant or low-informative variables, including coded duplicates, high-missingness items, and post-lab indicators that would leak target information.
+
+**Decisions:**
+- Dropped all `_code` columns that were redundant with their `_ans` counterparts to remove unnecessary categorical duplicates.  
+- Excluded identifiers (`SEQN`) and direct lab variables (`LBXGLU`, `LBXGH`) after creating the target label to prevent label leakage.  
+- Removed columns with over ~30–40% missingness (e.g., pregnancy and certain liver condition items) and variables representing post-diagnosis status to maintain clean, generalizable predictors.  
+- Retained only demographic, behavioral, medical-history, and self-report variables that would be available *before* clinical testing — aligning the dataset with a “survey-only screening” use case.
+
+**Rationale:**  
+EDA confirmed that keeping lab or post-diagnosis variables artificially inflated predictive performance. Excluding these ensures that model results reflect realistic, deployable screening conditions.
+
+
+### 2. Handling Missing and Implausible Values
+
+**EDA findings:**  
+Histograms and summary tables revealed sporadic missingness and implausible numeric values (e.g., sedentary_minutes > 2000/day). Some categorical fields also contained “Refused” or “Don’t know” codes that were sparse and unevenly distributed.
+
+**Decisions:**
+- Set implausible numeric outliers beyond physiologic limits to `NaN`.  
+- For numeric features, applied **median imputation** (robust to skew) and added missingness indicators to preserve signal about nonresponse behavior.  
+- For categorical features, replaced missing or special codes with `"Unknown"`, then one-hot encoded all categories to maintain interpretability.
+
+**Rationale:**  
+These choices preserve sample size and avoid bias from listwise deletion. Adding missing-indicator features allows models to learn from systematic nonresponse patterns, which EDA revealed to correlate weakly with risk.
+
+
+### 3. Transformation and Encoding
+
+**EDA findings:**  
+Numeric distributions varied in scale (e.g., age vs. minutes of sedentary activity), and categorical features contained many low-frequency levels (especially for race_eth and medical-history items).
+
+**Decisions:**
+- Scaled numeric features using **StandardScaler** to standardize mean/variance before penalized regression.  
+- Collapsed rare categorical levels using `min_frequency=0.02` in `OneHotEncoder` to reduce high-dimensional sparsity and improve model stability.  
+- Cast all categorical columns to string type before encoding to ensure consistent handling by the pipeline.
+
+**Rationale:**  
+Standardization and level-collapsing prevent unstable model coefficients and overfitting. This was validated by EDA frequency tables that showed several categories with fewer than 5% representation.
+
+
+### 4. Derived and Engineered Features
+
+**EDA findings:**  
+Weight, smoking, and activity features exhibited strong nonlinear trends with the target, while “weight-change” and “ever-smoker” variables provided additional behavioral context.
+
+**Decisions:**
+- Created derived variables such as `bmi_from_selfreport`, `weight_change_1y_lb`, `ever_smoker`, and `current_smoker` based on raw survey responses.  
+- Retained behavioral indicators (e.g., `tried_lose_weight_past_year_ans`, `dpq_poor_appetite_ans`) that had sufficient variance and plausible biological connection to metabolic risk.  
+- Excluded redundant metrics (e.g., calculated BMI from NHANES vs. self-reported BMI) to avoid multicollinearity.
+
+**Rationale:**  
+EDA scatterplots and correlation matrices indicated that these engineered variables added predictive signal while avoiding multicollinearity. Derived features improved interpretability by framing raw responses in clinically relevant terms.
+
+
+### 5. Class Balance and Evaluation Choices
+
+**EDA findings:**  
+The target variable was moderately imbalanced (≈42% prediabetic). Class distributions were stable across demographic subgroups, but accuracy alone would not capture meaningful performance.
+
+**Decisions:**
+- Preserved natural class proportions in both train/test splits (via `stratify=y`).  
+- Opted against oversampling or undersampling to maintain epidemiologic realism.  
+- Chose evaluation metrics sensitive to imbalance—**ROC AUC**, **PR AUC**, and **Brier score**, and later tuned decision thresholds to prioritize **recall ≥ 0.80**, based on public-health context.
+
+**Rationale:**  
+These choices ensure evaluation metrics reflect model usefulness in identifying at-risk individuals rather than optimizing overall accuracy.
+
+
+### Summary
+
+Our EDA-driven preprocessing and feature-engineering pipeline reflects a balance between data fidelity, interpretability, and predictive robustness. Each decision—from column exclusion to imputation and encoding—was made after examining variable distributions, missingness patterns, and domain relevance. Together, these steps produced a clean, representative dataset for fair and meaningful evaluation of prediabetes risk models.
+
 
 # Resampling Strategy
 
