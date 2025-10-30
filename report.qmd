@@ -283,9 +283,7 @@ Feature creation focused on aligning predictors with **realistic screening conte
 
 **Null model (majority class, CV)**
 - Accuracy **0.577**, ROC AUC **0.500**, PR AUC **0.423**, Brier **0.423**.
-
-
-
+This establishes a lower bound and shows that naive majority-class guessing provides no discrimination. A model that predicts all respondents as “not prediabetic” achieves roughly 58% accuracy due to class imbalance but fails to distinguish between healthy and at-risk individuals, underscoring the importance of informative features for screening.
 
 ## Cross-validation comparison (training folds; mean)
 
@@ -298,17 +296,22 @@ Feature creation focused on aligning predictors with **realistic screening conte
 | HGB T1 (balanced, rich grid) | 0.643541 | 0.630623 | 0.218507 | 0.689792 | 0.568617 |
 | HGB T2 (deeper, rich grid) | 0.628831 | 0.611288 | 0.222756 | 0.675514 | 0.560850 |
 
+The cross-validation results show that the regularized logistic regression models consistently outperform tree-based methods across all metrics. The **L2 logistic regression** achieves the best overall balance between discrimination (ROC AUC ≈ 0.71) and calibration (Brier ≈ 0.21), indicating stable, interpretable predictions with well-calibrated probabilities compared to the more variable ensemble models.
+
 **Winner:** **LogReg L2 (LR-CV)** by ROC AUC and Brier.  
-**Null baseline:** Accuracy = 0.577348, ROC AUC = 0.500000, PR AUC = 0.422652, Brier = 0.422652.
 
 ## Test set (held-out)
 
 - **Probabilities (no thresholding)**  
-  ROC AUC **0.717**, PR AUC **0.615**, Brier **0.210**, prevalence **0.423**.
+  ROC AUC **0.717**, PR AUC **0.615**, Brier **0.210**, prevalence **0.423**.  
+  These metrics show that the model generalizes well beyond training data. The ROC AUC of 0.717 indicates strong discrimination between at-risk and healthy individuals, while the Brier score of 0.210 suggests well-calibrated probability estimates that closely reflect real-world outcomes.  
 
 - **Thresholded for recall target (selected on validation)**  
   Threshold **0.3833** → **Precision 0.552**, **Recall 0.763**, **F1 0.641**.  
-  Confusion matrix: **TN 322, FP 267, FN 102, TP 329**.
+  This threshold balances recall and precision, capturing most truly at-risk individuals (high recall) while keeping false positives at a moderate level. The F1 score of 0.64 shows that overall predictive balance remains strong even after emphasizing sensitivity.  
+
+  Confusion matrix: **TN 322, FP 267, FN 102, TP 329**.  
+  The matrix shows that out of all test respondents, 329 were correctly identified as at-risk true positives, and 322 were correctly identified as not at-risk, true negatives. The 102 missed cases of false negatives reflect the trade-off for prioritizing recall, while 267 false positives represent individuals flagged for testing who may not have prediabetes—an acceptable outcome in a screening context.
 
 **Interpretation:** The penalized logistic regression model performs well on new data, showing strong generalization beyond the training set. After adjusting the prediction threshold to prioritize recall, which help with ensuring more at-risk individuals are correctly identified, the model still maintains a reasonable level of precision. The model doesn’t generate too many false alarms despite its focus on sensitivity.
 
@@ -333,20 +336,19 @@ Feature creation focused on aligning predictors with **realistic screening conte
 - **Non-Hispanic Asian (n = 62, prev = 0.435484):** P **0.525000**, R **0.777778**, F1 **0.626866**.  
   Strong recall with moderate precision; sample size is smaller, so monitor as data grow.
 - **Other/Multiracial (n = 51, prev = 0.450980):** P **0.708333**, R **0.739130**, F1 **0.723404**.  
-  Highest precision among listed groups with solid recall, but note the smallest n.
+  Highest precision among listed groups with solid recall, but note the smallest n.  
 
-
-**Note:** The model successfully identifies most at-risk individuals, as shown by its high recall. However, precision varies across groups, suggesting that some adjustments to features or thresholds may help reduce false positives.
+**Note:** The model successfully identifies most at-risk individuals, as shown by its high recall. However, precision varies across groups, suggesting that some adjustments to features or thresholds may help reduce false positives.  
 
 ## Curves & calibration
+![ROC curve (test)](roc_curve_test.png){width=55%}  
+The ROC curve shows that the model distinguishes reasonably well between likely and unlikely prediabetes cases, with an AUC of about 0.72.  
+![Precision–Recall curve (test)](pr_curve_test.png){width=45%}    
+The Precision–Recall curve indicates strong recall with moderate precision, showing the model performs well for identifying at-risk individuals in an imbalanced dataset.  
+![Calibration plot (test)](calibration_test.png){width=45%}  
+The calibration plot shows that predicted probabilities align closely with observed outcomes—suggesting the model’s probability estimates are reliable.    
 
-![ROC curve (test)](roc_curve_test.png)  
-The ROC curve shows that the model distinguishes reasonably well between likely and unlikely prediabetes cases, with an AUC of about 0.72.
-![Precision–Recall curve (test)](pr_curve_test.png)  
-The Precision–Recall curve indicates strong recall with moderate precision, showing the model performs well for identifying at-risk individuals in an imbalanced dataset.
-![Calibration plot (test)](calibration_test.png)
-The calibration plot shows that predicted probabilities align closely with observed outcomes—suggesting the model’s probability estimates are reliable.
+**Calibration:**  
+The model’s predicted probabilities are reasonably accurate — the Brier score (≈ 0.21) indicates that the probabilities align well with actual outcomes. This means that when the model predicts a 70% chance of prediabetes, that estimate tends to reflect real-world likelihood fairly closely.  
 
-
-**Calibration:** 
-The model’s predicted probabilities are reasonably accurate — the Brier score (≈ 0.21) indicates that the probabilities align well with actual outcomes. This means that when the model predicts a 70% chance of prediabetes, that estimate tends to reflect real-world likelihood fairly closely.
+Together, these curves show that the model achieves a strong balance between discrimination, reliability, and practical screening utility. The ROC and PR curves confirm that the model effectively ranks and identifies individuals at metabolic risk, even in a moderately imbalanced dataset. The calibration plot and Brier score suggest its probability estimates are trustworthy enough for real-world use, meaning the model could reasonably support survey-based prediabetes screening and referral decisions in public health settings.  
