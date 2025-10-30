@@ -1,5 +1,5 @@
 ---
-title: "INFO 4490 Project 1: Exploratory Analysis"
+title: "INFO 4490 Project 1: Report"
 authors: Zhalae Daneshvari, Nick Johnson, Jolene Le
 ---
 
