@@ -252,7 +252,7 @@ Our resampling pipeline — **stratified 80/20 split → 5-fold CV → recall-ca
 
 **Models & tuning**  
 - **Logistic Regression (L2):** `Cs = {0.1,1,10}`, `lbfgs`, CV scored by ROC AUC.  
-- **Elastic Net LR:** grid on `C = {0.5,1,2}`, `l1_ratio = {0.2,0.5,0.8}` (`saga`); optional **Platt calibration**.  
+- **Elastic Net LR:** grid on `C = {0.5,1,2}`, `l1_ratio = {0.2,0.5,0.8}` (`saga`);
 - **HistGradientBoosting:** two grids (balanced vs deeper) over learning rate, max leaves, min samples leaf, L2.  
 - **Random Forest:** `n_estimators ∈ {300,600}`, `max_depth ∈ {None,12}`, `min_samples_leaf ∈ {1,2,5}`, `max_features ∈ {"sqrt",0.3}`, `class_weight="balanced"`.
 
@@ -265,16 +265,17 @@ Our resampling pipeline — **stratified 80/20 split → 5-fold CV → recall-ca
 
 ## Cross-validation comparison (training folds; mean)
 
-| Workflow                  | ROC AUC | Brier  | Acc    | Bal Acc |
-|---|---:|---:|---:|---:|
-| **LogReg L2 (LR-CV)**     | **0.708** | **0.214** | 0.656 | 0.640 |
-| LogReg EN + Calib         | 0.707 | 0.214 | 0.656 | 0.638 |
-| LogReg ElasticNet         | 0.707 | 0.214 | 0.658 | 0.641 |
-| RandomForest (tuned)      | 0.699 | 0.218 | 0.651 | 0.654 |
-| HGB T1 (balanced)         | 0.690 | 0.219 | 0.644 | 0.631 |
-| HGB T2 (deeper)           | 0.676 | 0.223 | 0.629 | 0.611 |
+| workflow | acc | bacc | brier | roc_auc | pr_auc |
+|-----------|------:|------:|------:|------:|------:|
+| LogReg L2 (LR-CV) | 0.656045 | 0.639970 | 0.213509 | 0.707754 | 0.605266 |
+| LogReg EN + Calib | 0.656044 | 0.638416 | 0.213511 | 0.707470 | 0.604532 |
+| LogReg ElasticNet | 0.657516 | 0.641400 | 0.213629 | 0.707361 | 0.604254 |
+| RandomForest (tuned) | 0.650890 | 0.654314 | 0.218402 | 0.698844 | 0.589840 |
+| HGB T1 (balanced, rich grid) | 0.643541 | 0.630623 | 0.218507 | 0.689792 | 0.568617 |
+| HGB T2 (deeper, rich grid) | 0.628831 | 0.611288 | 0.222756 | 0.675514 | 0.560850 |
 
-**Winner:** **LogReg L2 (LR-CV)** by ROC AUC and Brier.
+**Winner:** **LogReg L2 (LR-CV)** by ROC AUC and Brier.  
+**Null baseline:** Accuracy = 0.577348, ROC AUC = 0.500000, PR AUC = 0.422652, Brier = 0.422652.
 
 ## Test set (held-out)
 
@@ -304,4 +305,4 @@ Our resampling pipeline — **stratified 80/20 split → 5-fold CV → recall-ca
 ![Calibration plot (test)](calibration_test.png)
 
 **Calibration:** 
-The model’s predicted probabilities are fairly accurate, the Brier score **Brier ≈ 0.21** shows that the model’s predictions are reasonably well aligned with reality. We also tried a method called Platt calibration, which fine-tunes probability estimates to make them more realistic, but it didn’t noticeably improve results. If we ever need more precise probability estimates, we could apply that adjustment again later. 
+The model’s predicted probabilities are reasonably accurate — the Brier score (≈ 0.21) indicates that the probabilities align well with actual outcomes. This means that when the model predicts a 70% chance of prediabetes, that estimate tends to reflect real-world likelihood fairly closely.
