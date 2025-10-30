@@ -23,12 +23,12 @@ Prediabetes is widespread yet often undiagnosed, as many adults do not undergo r
 # Data Description
 
 **Data:** Continuous NHANES (CDC/NCHS), Aug 2021–Aug 2023. One row per adult respondent (age ≥ 18), identified by `SEQN`. The dataset contains 5,099 adult respondents. 
-**Target:** `prediabetes_flag` (defined from lab variables only for target construction, then labs removed from predictors).  
+**Target:** `prediabetes_flag` defined using laboratory variables (fasting glucose or HbA1c) solely for target creation; all lab variables were then removed from the predictors.
 **Predictors (survey-only):**  
-- **Numeric:** age, BMI from self-report, 1-year weight change, weekday sleep hours, sedentary minutes, drinks per day (12 mo).  
-- **Categorical:** sex, race/ethnicity, smoking indicators, selected medical history (BP, cholesterol, asthma, thyroid, liver), weight-loss attempt, and PHQ-9 “poor appetite”, etc.  
-**Prevalence:** ~0.423 (class 1), where 43% of all people in the dataset are labeled as "1", which is "likely prediabetic"
-**Provenance & license:** CDC/NCHS public domain; de-identified and IRB-approved protocols.
+- **Numeric:**  Age, self-reported BMI, one-year weight change, weekday sleep hours, sedentary minutes, and average drinks per day (past 12 months).
+- **Categorical:** Sex, race/ethnicity, smoking indicators, selected medical history (blood pressure, cholesterol, asthma, thyroid, liver), weight-loss attempt, and PHQ-9 item “poor appetite,” etc.
+**Prevalence:** Approximately 0.423 for class 1, meaning 43% of respondents were labeled “1” (likely prediabetic).
+**Provenance & license:** U.S. CDC/NCHS public domain dataset; fully de-identified and approved under IRB protocols.
 
 ## Dataset Overview
 
@@ -285,7 +285,7 @@ Our resampling pipeline — **stratified 80/20 split → 5-fold CV → recall-ca
   Threshold **0.3833** → **Precision 0.552**, **Recall 0.763**, **F1 0.641**.  
   Confusion matrix: **TN 322, FP 267, FN 102, TP 329**.
 
-**Interpretation:** The penalized LR generalizes well; after tilting toward higher recall (screening), precision remains acceptable.
+**Interpretation:** The penalized logistic regression model performs well on new data, showing strong generalization beyond the training set. After adjusting the prediction threshold to prioritize recall, which help with ensuring more at-risk individuals are correctly identified, the model still maintains a reasonable level of precision. The model doesn’t generate too many false alarms despite its focus on sensitivity.
 
 ## Group metrics (test, thresholded)
 
@@ -295,7 +295,7 @@ Our resampling pipeline — **stratified 80/20 split → 5-fold CV → recall-ca
   Other Hisp.: P **0.526**, R **0.769**, F1 **0.625**; Mex. Am.: P **0.667**, R **0.780**, F1 **0.719**;  
   NH Asian: P **0.525**, R **0.778**, F1 **0.627**; Other/Multiracial: P **0.708**, R **0.739**, F1 **0.723**.
 
-**Note:** Recall is consistently high (desired); precision varies moderately—monitor as we iterate features/thresholds.
+**Note:** The model successfully identifies most at-risk individuals, as shown by its high recall. However, precision varies across groups, suggesting that some adjustments to features or thresholds may help reduce false positives.
 
 ## Curves & calibration
 
@@ -303,4 +303,5 @@ Our resampling pipeline — **stratified 80/20 split → 5-fold CV → recall-ca
 ![Precision–Recall curve (test)](pr_curve_test.png)  
 ![Calibration plot (test)](calibration_test.png)
 
-**Calibration:** Points are reasonably close to the diagonal; **Brier ≈ 0.21** indicates acceptable overall calibration. Platt calibration on the elastic net model didn’t materially improve global metrics; can revisit calibration on the chosen LR if tighter probability estimates are required.
+**Calibration:** 
+The model’s predicted probabilities are fairly accurate, the Brier score **Brier ≈ 0.21** shows that the model’s predictions are reasonably well aligned with reality. We also tried a method called Platt calibration, which fine-tunes probability estimates to make them more realistic, but it didn’t noticeably improve results. If we ever need more precise probability estimates, we could apply that adjustment again later. 
