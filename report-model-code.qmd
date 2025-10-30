@@ -1,0 +1,688 @@
+---
+title: "INFO 4940 Project 1 Report"
+---
+
+# Setup
+
+Load packages and data:
+
+```{python}
+
+import os, math, textwrap, warnings
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import re
+
+from sklearn.model_selection import (
+train_test_split, StratifiedKFold, GridSearchCV, cross_val_predict
+)
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, FunctionTransformer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.dummy import DummyClassifier
+from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
+from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
+from sklearn.calibration import CalibratedClassifierCV, CalibrationDisplay
+from sklearn.metrics import (
+accuracy_score, brier_score_loss, roc_auc_score, average_precision_score,
+classification_report, confusion_matrix, precision_recall_curve, RocCurveDisplay
+)
+from sklearn.metrics import precision_score, recall_score, f1_score
+
+from sklearn.metrics import balanced_accuracy_score
+
+warnings.filterwarnings("ignore", category=UserWarning)
+np.random.seed(42)
+pd.set_option("display.max_columns", 200)
+
+```
+
+# Load and Clean Data
+
+```{python}
+# Load dataset
+CSV_PATH = "data-raw/nhanes2123_prediabetes_features_labeled_clean.csv"  
+df = pd.read_csv(CSV_PATH)
+
+# Features
+target_col = "prediabetes_flag"
+
+numeric_cols = [
+    "age_years",
+    "bmi_from_selfreport",
+    "weight_change_1y_lb",
+    "sleep_hours_weekdays",
+    "sedentary_minutes",
+    "drinks_per_day_12mo",
+]
+
+categorical_cols = [
+    "sex",
+    "race_eth",
+    "ever_smoker",
+    "current_smoker",
+    "ever_high_bp_ans",
+    "ever_high_chol_ans",
+    "smoked_100_cigs_ans",
+    "smoke_now_ans",
+    "tried_lose_weight_past_year_ans",
+    "regular_periods_12mo_ans",
+    "dpq_poor_appetite_ans",
+    "ever_asthma_ans",
+    "anemia_treatment_3mo_ans",
+    "ever_chf_ans",
+    "ever_heart_attack_ans",
+    "ever_stroke_ans",
+    "ever_thyroid_problem_ans",
+    "ever_liver_condition_ans",
+]
+
+# Drop "code" columns used to make "ans" columns
+to_drop = []
+for c in df.columns:
+    if c.endswith("_code"):
+        root = c[:-5]
+        if f"{root}_ans" in df.columns:
+            to_drop.append(c)
+df = df.drop(columns=to_drop, errors="ignore").copy()
+print(f"Dropped {len(to_drop)} _code columns ")
+
+# Drop columns with ids, columns used as helpers helpers, and high-missingness columns
+drop_if_present = [
+    "SEQN","height_in","weight_lb","weight_1y_ago_lb","bmi",
+    "liver_fatty_ans","liver_fibrosis_ans","liver_cirrhosis_ans","liver_viral_hep_ans","liver_autoimmune_hep_ans",
+    "ever_weak_kidneys_ans",
+]
+df = df.drop(columns=[c for c in drop_if_present if c in df.columns], errors="ignore").copy()
+
+
+df[target_col] = pd.to_numeric(df[target_col], errors="coerce")
+df = df[df[target_col].notna()].copy()
+df[target_col] = df[target_col].round().astype(int)
+
+present_numeric = [c for c in numeric_cols if c in df.columns]
+present_categorical = [c for c in categorical_cols if c in df.columns]
+
+missing_numeric = [c for c in numeric_cols if c not in df.columns]
+missing_categorical = [c for c in categorical_cols if c not in df.columns]
+
+
+# Report and Save 
+print("Rows x Cols:", df.shape)
+print("Class prevalence (1):", round(df[target_col].mean(), 4))
+print("Numeric:", present_numeric)
+print("Categorical:", present_categorical)
+
+
+
+df.to_csv("data-raw/nhanes2123_surveyonly_clean.csv", index=False)
+
+```
+
+# Train/Test Split and Cross Validation
+
+```{python}
+
+RANDOM_STATE = 42
+
+X = df[present_numeric + present_categorical].copy()
+y = df[target_col].copy()
+
+
+X_train, X_test, y_train, y_test = train_test_split(
+X, y, test_size=0.20, stratify=y, random_state=RANDOM_STATE
+)
+
+# 5-fold stratified CV on the training set
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+
+print(f"Total: {len(X)} | Train: {len(X_train)} | Test: {len(X_test)}")
+
+```
+
+# Preprocessors
+
+```{python}
+
+# Numeric: median impute and scale
+num_pipe = Pipeline([
+    ("imp", SimpleImputer(strategy="median", add_indicator=True)),
+    ("sc", StandardScaler()),
+])
+
+# Categorical: impute 'Unknown',cast to string, one hot encoding
+cat_pipe = Pipeline([
+    ("imp", SimpleImputer(strategy="constant", fill_value="Unknown")),
+    ("to_str", FunctionTransformer(lambda X: X.astype(str))),
+    ("ohe", OneHotEncoder(handle_unknown="ignore", sparse_output=False, min_frequency=0.02)),
+])
+
+
+preprocess = ColumnTransformer(
+    transformers=[
+        ("num", num_pipe, present_numeric),
+        ("cat", cat_pipe, present_categorical),
+    ],
+    remainder="drop",
+)
+preprocess
+
+
+```
+
+# Null-model
+
+```{python}
+null_pipe = Pipeline([
+    ("prep", preprocess),
+    ("clf", DummyClassifier(strategy="most_frequent", random_state=RANDOM_STATE)),
+])
+
+# CV metric: accuracy from 0/1 predictions, ROC, PR, and Brier from probabilities
+accs, briers, aucs, pras = [], [], [], []
+for tr, va in cv.split(X_train, y_train):
+    X_tr, X_va = X_train.iloc[tr], X_train.iloc[va]
+    y_tr, y_va = y_train.iloc[tr], y_train.iloc[va]
+    null_pipe.fit(X_tr, y_tr)
+    p = null_pipe.predict_proba(X_va)[:, 1]
+    yhat = (p >= 0.5).astype(int)
+    accs.append(accuracy_score(y_va, yhat))
+    briers.append(brier_score_loss(y_va, p))
+    aucs.append(roc_auc_score(y_va, p))
+    pras.append(average_precision_score(y_va, p))
+
+null_results = pd.DataFrame([{
+    "workflow": "Null (majority)",
+    "acc_mean": float(np.mean(accs)),
+    "brier_mean": float(np.mean(briers)),
+    "roc_auc_mean": float(np.mean(aucs)),
+    "pr_auc_mean": float(np.mean(pras)),
+}])
+
+null_results
+
+```
+
+# Penalized Logistic Regression
+
+```{python}
+
+# CV report for probability and threshhold metrics
+def cv_report(model, X, y, cv):
+    accs, baccs, briers, aucs, pras = [], [], [], [], []
+    for tr, va in cv.split(X, y):
+        X_tr, X_va = X.iloc[tr], X.iloc[va]
+        y_tr, y_va = y.iloc[tr], y.iloc[va]
+        model.fit(X_tr, y_tr)
+        p = model.predict_proba(X_va)[:, 1]
+        yhat = (p >= 0.5).astype(int) 
+        accs.append(accuracy_score(y_va, yhat))
+        baccs.append(balanced_accuracy_score(y_va, yhat))
+        briers.append(brier_score_loss(y_va, p))
+        aucs.append(roc_auc_score(y_va, p))
+        pras.append(average_precision_score(y_va, p))
+    return (float(np.mean(accs)), float(np.mean(baccs)),
+            float(np.mean(briers)), float(np.mean(aucs)), float(np.mean(pras)))
+
+# Ridge Regression —  tune C over [0.1,1,10]
+wfA = Pipeline([
+    ("prep", preprocess),
+    ("clf", LogisticRegressionCV(
+        Cs=[0.1, 1, 10],
+        cv=cv,
+        penalty="l2",
+        solver="lbfgs",
+        max_iter=3000,
+        scoring="roc_auc",
+        random_state=RANDOM_STATE,
+    )),
+])
+A_acc, A_bacc, A_brier, A_auc, A_pra = cv_report(wfA, X_train, y_train, cv)
+
+# Elastic Net 
+wfB_base = Pipeline([
+    ("prep", preprocess),
+    ("clf", LogisticRegression(
+        penalty="elasticnet",
+        solver="saga",
+        max_iter=5000,
+        random_state=RANDOM_STATE,
+    )),
+])
+grid_B = {"clf__C": [0.5, 1.0, 2.0], "clf__l1_ratio": [0.2, 0.5, 0.8]}
+gsB = GridSearchCV(wfB_base, grid_B, scoring="roc_auc", cv=cv, n_jobs=1, refit=True)
+gsB.fit(X_train, y_train)
+wfB = gsB.best_estimator_
+B_acc, B_bacc, B_brier, B_auc, B_pra = cv_report(wfB, X_train, y_train, cv)
+
+# Elastic Net + Platt calibration 
+wfC = CalibratedClassifierCV(wfB, method="sigmoid", cv=cv)
+C_acc, C_bacc, C_brier, C_auc, C_pra = cv_report(wfC, X_train, y_train, cv)
+
+penalized_l_table = (
+    pd.DataFrame([
+        {"workflow": "LogReg L2 (LR-CV)", "acc": A_acc, "bacc": A_bacc, "brier": A_brier, "roc_auc": A_auc, "pr_auc": A_pra},
+        {"workflow": "LogReg ElasticNet", "acc": B_acc, "bacc": B_bacc, "brier": B_brier, "roc_auc": B_auc, "pr_auc": B_pra},
+        {"workflow": "LogReg EN + Calib", "acc": C_acc, "bacc": C_bacc, "brier": C_brier, "roc_auc": C_auc, "pr_auc": C_pra},
+    ])
+    .sort_values(["roc_auc", "brier"], ascending=[False, True])
+    .reset_index(drop=True)
+)
+penalized_l_table
+
+
+
+```
+
+# Boosted Trees Model
+
+```{python}
+
+# Preprocessing for trees
+# Numeric: median impute
+# Categorical: impute + OHE with min_frequency = 0.02 to collapse low levels
+preprocess_tree = ColumnTransformer(
+    transformers=[
+        ("num", SimpleImputer(strategy="median"), present_numeric),
+        (
+            "cat",
+            Pipeline(
+                [
+                    ("imp", SimpleImputer(strategy="constant", fill_value="Unknown")),
+                    ("to_str", FunctionTransformer(lambda X: X.astype(str))),
+                    (
+                        "ohe",
+                        OneHotEncoder(
+                            handle_unknown="ignore",
+                            sparse_output=False,
+                            min_frequency=0.05,
+                        ),
+                    ),
+                ]
+            ),
+            present_categorical,
+        ),
+    ],
+    remainder="drop",
+)
+
+# Tree 1: moderate leaves and lr
+pipe_T1 = Pipeline(
+    [
+        ("prep", preprocess_tree),
+        (
+            "clf",
+            HistGradientBoostingClassifier(
+                random_state=RANDOM_STATE,
+                early_stopping=True,
+            ),
+        ),
+    ]
+)
+
+grid_T1 = {
+    "clf__learning_rate": [0.03, 0.05, 0.10],
+    "clf__max_leaf_nodes": [31, 63, 127],
+    "clf__min_samples_leaf": [5, 10, 20],
+    "clf__l2_regularization": [0.0, 1e-3, 1e-2],
+    "clf__max_bins": [255],
+}
+
+gs_T1 = GridSearchCV(
+    estimator=pipe_T1,
+    param_grid=grid_T1,
+    scoring="roc_auc",
+    cv=3,
+    n_jobs=-1,
+    refit=True,
+).fit(X_train, y_train)
+
+T1_acc, T1_bacc, T1_brier, T1_auc, T1_pra = cv_report(
+    gs_T1.best_estimator_, X_train, y_train, cv
+)
+
+# Tree 2: deeper trees and lower learning rates
+pipe_T2 = Pipeline(
+    [
+        ("prep", preprocess_tree),
+        (
+            "clf",
+            HistGradientBoostingClassifier(
+                random_state=RANDOM_STATE,
+                early_stopping=True,
+            ),
+        ),
+    ]
+)
+
+grid_T2 = {
+    "clf__learning_rate": [0.02, 0.03, 0.05],
+    "clf__max_leaf_nodes": [63, 127, 255],
+    "clf__min_samples_leaf": [2, 5, 10],
+    "clf__l2_regularization": [0.0, 1e-3, 1e-2],
+}
+
+gs_T2 = GridSearchCV(
+    estimator=pipe_T2,
+    param_grid=grid_T2,
+    scoring="roc_auc",
+    cv=3,
+    n_jobs=-1,
+    refit=True,
+).fit(X_train, y_train)
+
+T2_acc, T2_bacc, T2_brier, T2_auc, T2_pra = cv_report(
+    gs_T2.best_estimator_, X_train, y_train, cv
+)
+
+# Comparison table
+boosted_t_table = (
+    pd.DataFrame(
+        [
+            {
+                "workflow": "HGB T1 (balanced, rich grid)",
+                "acc": T1_acc,
+                "bacc": T1_bacc,
+                "brier": T1_brier,
+                "roc_auc": T1_auc,
+                "pr_auc": T1_pra,
+            },
+            {
+                "workflow": "HGB T2 (deeper, rich grid)",
+                "acc": T2_acc,
+                "bacc": T2_bacc,
+                "brier": T2_brier,
+                "roc_auc": T2_auc,
+                "pr_auc": T2_pra,
+            },
+        ]
+    )
+    .sort_values(["roc_auc", "brier"], ascending=[False, True])
+    .reset_index(drop=True)
+)
+boosted_t_table
+```
+
+# Random forest model
+
+```{python}
+
+pipe_rf = Pipeline(
+    [
+        ("prep", preprocess_tree),
+        (
+            "clf",
+            RandomForestClassifier(random_state=RANDOM_STATE, class_weight="balanced"),
+        ),
+    ]
+)
+
+grid_rf = {
+    "clf__n_estimators": [300, 600],
+    "clf__max_depth": [None, 12],
+    "clf__min_samples_leaf": [1, 2, 5],
+    "clf__max_features": ["sqrt", 0.3],
+}
+
+gsRF = GridSearchCV(
+    pipe_rf, grid_rf, scoring="roc_auc", cv=3, n_jobs=-1, refit=True
+).fit(X_train, y_train)
+
+# cv_report returns: acc, bacc, brier, auc, pr
+RF_acc, RF_bacc, RF_brier, RF_auc, RF_pra = cv_report(
+    gsRF.best_estimator_, X_train, y_train, cv
+)
+
+rf_table = pd.DataFrame(
+    [
+        {
+            "workflow": "RandomForest (tuned)",
+            "acc": RF_acc,
+            "bacc": RF_bacc,
+            "brier": RF_brier,
+            "roc_auc": RF_auc,
+            "pr_auc": RF_pra,
+        }
+    ]
+)
+
+rf_table
+
+
+```
+
+# Compare
+
+```{python}
+def row_for(df, name):
+    m = df[df["workflow"] == name]
+    if m.empty:
+        return {
+            "workflow": name,
+            "acc": np.nan,
+            "bacc": np.nan,
+            "brier": np.nan,
+            "roc_auc": np.nan,
+            "pr_auc": np.nan,
+        }
+    return m.iloc[0].to_dict()
+
+
+cv_compare = (
+    pd.DataFrame(
+        [
+            {
+                "workflow": "LogReg L2 (LR-CV)",
+                **row_for(penalized_l_table, "LogReg L2 (LR-CV)"),
+            },
+            {
+                "workflow": "LogReg ElasticNet",
+                **row_for(penalized_l_table, "LogReg ElasticNet"),
+            },
+            {
+                "workflow": "LogReg EN + Calib",
+                **row_for(penalized_l_table, "LogReg EN + Calib"),
+            },
+            {
+                "workflow": "HGB T1 (balanced, rich grid)",
+                **row_for(boosted_t_table, "HGB T1 (balanced, rich grid)"),
+            },
+            {
+                "workflow": "HGB T2 (deeper, rich grid)",
+                **row_for(boosted_t_table, "HGB T2 (deeper, rich grid)"),
+            },
+            {
+                "workflow": "RandomForest (tuned)",
+                **(
+                    rf_table.iloc[0].to_dict()
+                    if ("rf_table" in globals() and not rf_table.empty)
+                    else {}
+                ),
+            },
+        ]
+    )
+    .dropna(subset=["roc_auc", "brier"], how="any")
+    .sort_values(["roc_auc", "brier"], ascending=[False, True])
+    .reset_index(drop=True)
+)
+
+print("Workflows found:", list(cv_compare["workflow"]))
+cv_compare
+
+
+```
+
+# Finalize test
+
+```{python}
+
+candidates = {
+    "LogReg L2 (LR-CV)": wfA,
+    "LogReg ElasticNet": wfB,
+    "LogReg EN + Calib": wfC,
+    "HGB T1 (balanced)": gs_T1.best_estimator_,
+    "HGB T2 (deeper, lower LR)": gs_T2.best_estimator_,
+    "RandomForest (tuned)": gsRF.best_estimator_,
+}
+
+winner_name = cv_compare.iloc[0]["workflow"]
+model_final = candidates[winner_name]
+
+model_final.fit(X_train, y_train)
+p_test = model_final.predict_proba(X_test)[:, 1]
+
+test_prob = {
+    "where": "test (probabilities)",
+    "workflow": winner_name,
+    "roc_auc": float(roc_auc_score(y_test, p_test)),
+    "pr_auc": float(average_precision_score(y_test, p_test)),
+    "brier": float(brier_score_loss(y_test, p_test)),
+    "prevalence_test": float(y_test.mean()),
+}
+pd.DataFrame([test_prob])
+
+
+```
+
+# Thresholded-Selection
+
+```{python}
+
+X_tr, X_val, y_tr, y_val = train_test_split(
+    X_train, y_train, test_size=0.20, stratify=y_train, random_state=123
+)
+model_final.fit(X_tr, y_tr)
+p_val = model_final.predict_proba(X_val)[:, 1]
+
+prec, rec, thr = precision_recall_curve(y_val, p_val)
+target_recall = 0.80
+candidates_thr = [(P, R, T) for P, R, T in zip(prec[:-1], rec[:-1], thr) if R >= target_recall]
+if candidates_thr:
+    candidates_thr.sort(key=lambda x: (x[0], x[2]))
+    P_sel, R_sel, T_sel = candidates_thr[-1]
+else:
+    idx = int(np.argmax(rec))
+    P_sel, R_sel = float(prec[idx]), float(rec[idx])
+    T_sel = (thr[idx-1] if idx > 0 else (thr[0] if len(thr) else 0.5))
+
+pd.DataFrame([{
+    "target_recall": target_recall,
+    "chosen_threshold": float(T_sel),
+    "val_precision_at_threshold": float(P_sel),
+    "val_recall_at_threshold": float(R_sel),
+}])
+
+yhat_test = (p_test >= T_sel).astype(int)
+tn, fp, fn, tp = confusion_matrix(y_test, yhat_test, labels=[0, 1]).ravel()
+
+test_thresh = {
+    "where": "test (thresholded)",
+    "threshold": float(T_sel),
+    "precision": float((tp / (tp + fp)) if (tp + fp) else 0.0),
+    "recall": float((tp / (tp + fn)) if (tp + fn) else 0.0),
+    "f1": float((2 * tp / (2 * tp + fp + fn)) if (2 * tp + fp + fn) else 0.0),
+    "tn": int(tn), "fp": int(fp), "fn": int(fn), "tp": int(tp),
+}
+pd.DataFrame([test_thresh])
+
+```
+
+# Group Metrics
+
+```{python}
+
+# Compute precision/recall/F1
+def group_metrics(df_X, y_true, y_pred, group_col):
+    if group_col not in df_X.columns:
+        return pd.DataFrame(
+            columns=[group_col, "n", "prevalence", "precision", "recall", "f1"]
+        )
+
+    y_true = pd.Series(y_true, index=df_X.index)
+    y_pred = pd.Series(y_pred, index=df_X.index)
+    y_true = y_true.astype(int)
+    y_pred = (y_pred > 0).astype(int)
+
+    out = []
+    for g, idx in df_X.groupby(group_col).groups.items():
+        yt = y_true.loc[idx]
+        yp = y_pred.loc[idx]
+        if len(yt) == 0:
+            continue
+        out.append(
+            {
+                group_col: str(g),
+                "n": int(len(idx)),
+                "prevalence": float(yt.mean()),
+                "precision": float(precision_score(yt, yp, zero_division=0)),
+                "recall": float(recall_score(yt, yp, zero_division=0)),
+                "f1": float(f1_score(yt, yp, zero_division=0)),
+            }
+        )
+    return pd.DataFrame(out).sort_values("n", ascending=False).reset_index(drop=True)
+
+
+# Build prediction series aligned to X_test
+yhat_test_series = pd.Series(yhat_test, index=X_test.index)
+
+gm_sex = group_metrics(X_test, y_test, yhat_test_series, "sex")
+gm_race = group_metrics(X_test, y_test, yhat_test_series, "race_eth")
+
+print("By sex:")
+display(gm_sex)
+print("\nBy race_eth:")
+display(gm_race)
+
+
+```
+
+# PR, Roc Curve and Calibration Plot
+
+```{python}
+#PR
+prec_t, rec_t, _ = precision_recall_curve(y_test, p_test)
+plt.figure()
+plt.step(rec_t, prec_t, where="post")
+plt.xlabel("Recall"); plt.ylabel("Precision")
+plt.title(f"Precision–Recall (test) — {winner_name}")
+plt.tight_layout()
+plt.savefig("pr_curve_test.png", dpi=200)
+plt.show()
+
+
+# ROC
+RocCurveDisplay.from_predictions(y_test, p_test)
+plt.title(f"ROC (test) — {winner_name}")
+plt.tight_layout()
+plt.savefig("roc_curve_test.png", dpi=200)
+plt.show()
+
+#Calibration Plot
+def calibration_curve_simple(y_true, y_prob, n_bins=12):
+    bins = np.linspace(0.0, 1.0, n_bins + 1)
+    ids = np.digitize(y_prob, bins) - 1
+    pts = []
+    for b in range(n_bins):
+        m = ids == b
+        if not np.any(m):
+            continue
+        pts.append((y_prob[m].mean(), y_true[m].mean(), m.sum()))
+    return np.array(pts)
+
+cal_pts = calibration_curve_simple(y_test.values, p_test, n_bins=12)
+plt.figure()
+plt.plot([0, 1], [0, 1])
+if cal_pts.size:
+    plt.scatter(cal_pts[:, 0], cal_pts[:, 1])
+plt.xlabel("Predicted probability")
+plt.ylabel("Observed frequency")
+plt.title(f"Calibration (test) — {winner_name}")
+plt.tight_layout()
+plt.savefig("calibration_test.png", dpi=200)
+plt.show()
+
+
+```
