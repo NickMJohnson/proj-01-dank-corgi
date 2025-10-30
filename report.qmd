@@ -28,7 +28,7 @@ Prediabetes is widespread yet often undiagnosed, as many adults do not undergo r
 
 **Predictors (survey-only):**  
 - **Numeric:** Age, self-reported BMI, one-year weight change, weekday sleep hours, sedentary minutes, and average drinks per day (past 12 months).  
-&nbsp;- **Categorical:** Sex, race/ethnicity, smoking indicators, selected medical history (blood pressure, cholesterol, asthma, thyroid, liver), weight-loss attempt, and PHQ-9 item “poor appetite,” etc.
+- **Categorical:** Sex, race/ethnicity, smoking indicators, selected medical history (blood pressure, cholesterol, asthma, thyroid, liver), weight-loss attempt, and PHQ-9 item “poor appetite,” etc.
 
 **Prevalence:** Approximately **0.423** for class 1, meaning **43%** of respondents were labeled “1” (*likely prediabetic*).
 
@@ -313,7 +313,7 @@ The cross-validation results show that the regularized logistic regression model
   Confusion matrix: **TN 322, FP 267, FN 102, TP 329**.  
   The matrix shows that out of all test respondents, 329 were correctly identified as at-risk true positives, and 322 were correctly identified as not at-risk, true negatives. The 102 missed cases of false negatives reflect the trade-off for prioritizing recall, while 267 false positives represent individuals flagged for testing who may not have prediabetes—an acceptable outcome in a screening context.
 
-**Interpretation:** The penalized logistic regression model performs well on new data, showing strong generalization beyond the training set. After adjusting the prediction threshold to prioritize recall, which help with ensuring more at-risk individuals are correctly identified, the model still maintains a reasonable level of precision. The model doesn’t generate too many false alarms despite its focus on sensitivity.
+**Interpretation:** The penalized logistic regression model performs well on new data, showing strong generalization beyond the training set. After adjusting the prediction threshold to prioritize recall, this setup helps ensure that more at-risk individuals are correctly identified, the model still maintains a reasonable level of precision. The model doesn’t generate too many false alarms despite its focus on sensitivity.
 
 ## Group metrics (test, thresholded)
 **Overview.** At the chosen threshold, recall is high across groups (the model catches most truly at-risk people), while precision varies (some groups get more false positives than others). Differences in **prevalence** by group (share labeled 1) help explain some precision variation.
