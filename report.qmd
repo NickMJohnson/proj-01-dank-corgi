@@ -26,8 +26,8 @@ Prediabetes is widespread yet often undiagnosed, as many adults do not undergo r
 
 **Target:** `prediabetes_flag`, defined using laboratory variables (fasting glucose or HbA1c) solely for target creation. All lab variables were then removed from the predictors.
 
-**Predictors (survey-only):**  
-- **Numeric:** Age, self-reported BMI, one-year weight change, weekday sleep hours, sedentary minutes, and average drinks per day (past 12 months).  
+**Predictors (survey-only):**\
+- **Numeric:** Age, self-reported BMI, one-year weight change, weekday sleep hours, sedentary minutes, and average drinks per day (past 12 months).\
 - **Categorical:** Sex, race/ethnicity, smoking indicators, selected medical history (blood pressure, cholesterol, asthma, thyroid, liver), weight-loss attempt, and PHQ-9 item “poor appetite,” etc.
 
 **Prevalence:** Approximately **0.423** for class 1, meaning **43%** of respondents were labeled “1” (*likely prediabetic*).
@@ -36,22 +36,20 @@ Prediabetes is widespread yet often undiagnosed, as many adults do not undergo r
 
 ## Dataset Overview
 
-Our analysis uses the **Continuous NHANES (National Health and Nutrition Examination Survey)** dataset collected between **August 2021 and August 2023**, publicly released by the **U.S. Centers for Disease Control and Prevention (CDC)** and the **National Center for Health Statistics (NCHS)**.\
-NHANES combines structured interviews, physical examinations, and laboratory tests to assess the health and nutritional status of adults and children in the United States.
+Our analysis uses the **Continuous NHANES (National Health and Nutrition Examination Survey)** dataset collected between **August 2021 and August 2023**, publicly released by the **U.S. Centers for Disease Control and Prevention (CDC)** and the **National Center for Health Statistics (NCHS)**. NHANES combines structured interviews, physical examinations, and laboratory tests to assess the health and nutritional status of adults and children in the United States.
 
 Each observation (row) represents a unique adult respondent (age ≥ 18) identified by `SEQN`. Each attribute (column) represents either a self-reported questionnaire response, a derived health indicator, or one of the laboratory variables used to construct the binary outcome.
 
 ## Purpose and Funding
 
 NHANES was established to monitor the health and nutrition of the U.S. population and inform evidence-based public health policy.\
-It is funded and managed by the **U.S. Department of Health and Human Services (HHS)** through the **CDC’s National Center for Health Statistics (NCHS)**.\
-Our project repurposes these publicly available data to test whether **survey-only predictors** can accurately identify individuals at risk for prediabetes, thereby supporting lower-cost, early screening strategies.
+It is funded and managed by the **U.S. Department of Health and Human Services (HHS)** through the **CDC’s National Center for Health Statistics (NCHS)**. Our project repurposes these publicly available data to test whether **survey-only predictors** can accurately identify individuals at risk for prediabetes, thereby supporting lower-cost, early screening strategies.
 
 ## Observations and Attributes
 
 -   **Observations:** One adult respondent per row, uniquely identified by `SEQN`.
 -   **Target variable:**
-    -   `prediabetes_flag` = 1 if fasting plasma glucose (`LBXGLU`) ∈ \[100, 125\] mg/dL or glycohemoglobin (`LBXGH`) ∈ \[5.7, 6.4%\]; otherwise 0.\
+    -   `prediabetes_flag` = 1 if fasting plasma glucose (`LBXGLU`) ∈ \[100, 125\] mg/dL or glycohemoglobin (`LBXGH`) ∈ \[5.7, 6.4%\]; otherwise 0.
     -   Laboratory variables were used **only for constructing the target** and removed prior to modeling.
 -   **Predictor attributes (self-reported or demographic):**
     -   **Demographics:** Age (`RIDAGEYR`), sex (`RIAGENDR`), race/ethnicity (`RIDRETH3`)
@@ -63,11 +61,9 @@ Our project repurposes these publicly available data to test whether **survey-on
 
 ## Data Generation and Collection Process
 
-The **NHANES 2021–2023** survey uses a **stratified multistage probability design** to yield a nationally representative sample of U.S. civilians.\
-Data collection involves: - **Interviews** conducted in participants’ homes to record demographic, dietary, and behavioral information. - **Physical examinations and lab measurements** performed in mobile exam centers by trained medical staff. - **Standardized coding** by NCHS personnel to ensure consistency across modules and years.
+The **NHANES 2021–2023** survey uses a **stratified multistage probability design** to yield a nationally representative sample of U.S. civilians. Data collection involves: - **Interviews** conducted in participants’ homes to record demographic, dietary, and behavioral information. - **Physical examinations and lab measurements** performed in mobile exam centers by trained medical staff. - **Standardized coding** by NCHS personnel to ensure consistency across modules and years.
 
-Questionnaire modules (e.g., Demographics, Weight History, Physical Activity, Smoking, Medical Conditions, Mental Health) are self-reported, whereas lab measures (e.g., glucose, HbA1c) are obtained via blood draws.\
-Missingness stems from nonresponse, skip patterns, and module-level exclusions.
+Questionnaire modules (e.g., Demographics, Weight History, Physical Activity, Smoking, Medical Conditions, Mental Health) are self-reported, whereas lab measures (e.g., glucose, HbA1c) are obtained via blood draws. Missingness stems from nonresponse, skip patterns, and module-level exclusions.
 
 ## Preprocessing and Cleaning
 
@@ -94,8 +90,7 @@ Missingness stems from nonresponse, skip patterns, and module-level exclusions.
 
 ## Ethical Use and Data Governance
 
-All NHANES participants provide **written informed consent**, and the study protocol is approved by the NCHS Research Ethics Review Board. All datasets are **de-identified prior to public release** to protect participant privacy.\
-Our use complies with CDC’s public data use policy and aligns with ethical principles of **responsible data reuse** for population health benefit.
+All NHANES participants provide **written informed consent**, and the study protocol is approved by the NCHS Research Ethics Review Board. All datasets are **de-identified prior to public release** to protect participant privacy. Our use complies with CDC’s public data use policy and aligns with ethical principles of **responsible data reuse** for population health benefit.
 
 # Data Limitations
 
@@ -113,7 +108,7 @@ Nonresponse, skip logic, and refusal to answer sensitive questions (e.g., mental
 
 ### 3. Cross-Sectional Design and Temporal Drift
 
-NHANES is a snapshot survey; it does not track individuals over time. Behavioral and health changes that precede or follow prediabetes diagnosis are not captured.\
+NHANES is a snapshot survey and it does not track individuals over time. Behavioral and health changes that precede or follow prediabetes diagnosis are not captured.\
 **Impact:** The model captures associations, not causation. A strong predictive feature may reflect correlation (e.g., weight-loss attempts) rather than direct risk. Moreover, lifestyle trends shift annually, so a model trained on 2021–2023 data may degrade as public health behaviors evolve.
 
 ### 4. Measurement Error and Module Inconsistency
@@ -124,7 +119,7 @@ Small differences in question wording, translation, or measurement protocols occ
 ### 5. Representativeness and Exclusion Effects
 
 Although NHANES is nationally representative, our filtered sample removes participants under 18, those diagnosed with diabetes, and those missing key labs.\
-**Impact:** This constrains external validity—our model estimates risk only among undiagnosed adults, not the general population. Using it outside this context (e.g., for pediatric screening or already-diagnosed diabetics) could lead to misleading risk predictions.
+**Impact:** This constrains external validity, our model estimates risk only among undiagnosed adults, not the general population. Using it outside this context (e.g., for pediatric screening or already-diagnosed diabetics) could lead to misleading risk predictions.
 
 ### 6. Potential Harms and Ethical Considerations
 
@@ -247,126 +242,135 @@ Our resampling pipeline — **stratified 80/20 split → 5-fold CV → recall-ca
 2.  Prevent information leakage between training, validation, and test phases.
 3.  Produce stable, unbiased performance estimates grounded in realistic screening objectives.
 
-
 # Modeling Strategies
 
-Our modeling strategy balances **interpretability**, **robustness**, and **public-health relevance**. We intentionally tested both **linear models** (like Logistic Regression and Elastic Net) and **nonlinear ensemble models** (Random Forest and HistGradientBoosting) to understand not just how accurately we can predict prediabetes, but **why** certain features matter.  
+Our modeling strategy balances **interpretability**, **robustness**, and **public-health relevance**. We intentionally tested both **linear models** (like Logistic Regression and Elastic Net) and **nonlinear ensemble models** (Random Forest and HistGradientBoosting) to understand not just how accurately we can predict prediabetes, but **why** certain features matter.
 
-**Why these models:**  
+**Why these models:**
 
-- **Logistic Regression (L2):**  
-  Chosen as the primary baseline because it is highly interpretable — each coefficient represents the direction and strength of association between a survey feature and prediabetes likelihood.  
-  This transparency makes it suitable for healthcare settings, where practitioners must explain decisions.  
+-   **Logistic Regression (L2):**\
+    Chosen as the primary baseline because it is highly interpretable — each coefficient represents the direction and strength of association between a survey feature and prediabetes likelihood. This transparency makes it suitable for healthcare settings, where practitioners must explain decisions.
 
-- **Elastic Net:**  
-  Extends logistic regression by allowing sparse feature selection, balancing simplicity through L1 regularization with stability through L2.  
-  This helps surface which questionnaire features carry the most predictive power without overfitting noise.  
+-   **Elastic Net:**\
+    Extends logistic regression by allowing sparse feature selection, balancing simplicity through L1 regularization with stability through L2.\
+    This helps surface which questionnaire features carry the most predictive power without overfitting noise.
 
-- **Random Forest** and **HistGradientBoosting:**  
-  Included to test whether nonlinear interactions (e.g., how age and sleep jointly influence metabolic risk) could outperform linear methods.  
-  These models capture complex relationships that might be missed by logistic regression but are less interpretable, making them secondary candidates for deployment in healthcare contexts.
+-   **Random Forest** and **HistGradientBoosting:**\
+    Included to test whether nonlinear interactions (e.g., how age and sleep jointly influence metabolic risk) could outperform linear methods. These models capture complex relationships that might be missed by logistic regression but are less interpretable, making them secondary candidates for deployment in healthcare contexts.
 
-**Shared preprocessing**  
+**Shared preprocessing**\
 - Numeric: Missing values were filled using the median, with an added indicator for missingness in linear models, and all numeric features were standardized for consistent scaling. We use median imputation, which is robust to outliers, to keep rows with missing values, add missingness indicators so linear models can learn that “not answered” itself carries signal, and standardize all numeric features so penalties in logistic/elastic-net treat predictors on the same scale (e.g., age and sedentary_minutes contribute comparably during training).
 
-- Categorical: Missing values were replaced with “Unknown,” converted to strings, and one-hot encoded, with rare categories grouped together using a minimum frequency threshold. We impute missing categories as “Unknown” to preserve sample size and makes absence explicit, cast to strings for consistent handling, then one-hot encode so linear models can learn separate weights per level. We also set a minimum frequency threshold to merge ultra-rare levels and this reduces noise and variance, improving stability and generalization across small subgroups.
+-   **Categorical:** Missing values were replaced with “Unknown,” converted to strings, and one-hot encoded, with rare categories grouped together using a minimum frequency threshold. We impute missing categories as “Unknown” to preserve sample size and makes absence explicit, cast to strings for consistent handling, then one-hot encode so linear models can learn separate weights per level. We also set a minimum frequency threshold to merge ultra-rare levels and this reduces noise and variance, improving stability and generalization across small subgroups.
 
-- Why this setup: These steps match our screening goal: keep as many respondents as possible, avoid information leakage, and produce features that are interpretable with clear coefficients, and robust, which reduces the risk of overfit to smaller categories.
+-   **Why this setup:** These steps match our screening goal: keep as many respondents as possible, avoid information leakage, and produce features that are interpretable with clear coefficients, and robust, which reduces the risk of overfit to smaller categories.
 
-**Feature engineering and real-world relevance**  
+**Feature engineering and real-world relevance**\
 Feature creation focused on aligning predictors with **realistic screening contexts** and the project’s broader **public health objective**: identifying adults likely to have prediabetes using self-reported, survey-based information as a practical and scalable screening tool. Derived variables such as `weight_change_1y_lb`, `ever_smoker`, and `bmi_from_selfreport` translate abstract questionnaire data into interpretable, behavior-based risk indicators that mirror what clinicians consider during real-world screenings. Including mental and lifestyle factors like `dpq_poor_appetite_ans` or sedentary time connects the model to emerging research on how psychological and behavioral patterns affect glucose regulation. Together, these engineered features make the model both **clinically meaningful** and **actionable**, bridging the gap between statistical prediction and practical screening tools.
 
-**Models & tuning**  
+**Models & tuning**
 
-- **Logistic Regression (L2):** `Cs = {0.1,1,10}`, `lbfgs`, CV scored by ROC AUC. L2 regularization helps stabilize coefficients and prevent overfitting, creating an interpretable yet robust baseline for identifying prediabetes risk factors.  
-- **Elastic Net LR:** grid on `C = {0.5,1,2}`, `l1_ratio = {0.2,0.5,0.8}` (`saga`). This model encourages more stable solutions by mixing L1 (feature selection) and L2 (shrinkage), helpful when OHE expands the feature space.  
-- **HistGradientBoosting:** two grids (a “balanced” and a “deeper” setting) over learning rate, max leaves, min samples leaf, and L2 regularization. These explore non-linear effects and interactions (e.g., age × sleep), with early stopping to curb overfit.  
-- **Random Forest:** grid over `n_estimators`, `max_depth`, `min_samples_leaf`, and `max_features`, with `class_weight="balanced"` to counter class skew. RF offers a variance-tolerant non-linear baseline and a check on whether complex structure beats linear interpretability.  
-**Selection metrics**: We evaluated models using three complementary metrics that together capture discrimination, calibration, and real-world screening value.  
+-   **Logistic Regression (L2):** `Cs = {0.1,1,10}`, `lbfgs`, CV scored by ROC AUC. L2 regularization helps stabilize coefficients and prevent overfitting, creating an interpretable yet robust baseline for identifying prediabetes risk factors.
 
-- **ROC AUC (primary discrimination):** Measures how well models rank prediabetes risk across all thresholds, making it ideal for model selection before deciding on an operating threshold.  
-- **Brier score (calibration):** Penalizes probability errors—lower values indicate better calibration. This metric shows whether predicted probabilities (e.g., 0.70) reflect actual observed risk, which is important when using outputs to guide referral intensity.  
-- **PR AUC (class-focused):** Given the ~42% prevalence of class 1, PR AUC summarizes the precision–recall trade-off for the positive class, highlighting how many false positives occur at higher sensitivity levels.  
+-   **Elastic Net LR:** grid on `C = {0.5,1,2}`, `l1_ratio = {0.2,0.5,0.8}` (`saga`). This model encourages more stable solutions by mixing L1 (feature selection) and L2 (shrinkage), helpful when OHE expands the feature space.
+
+-   **HistGradientBoosting:** two grids (a “balanced” and a “deeper” setting) over learning rate, max leaves, min samples leaf, and L2 regularization. These explore non-linear effects and interactions (e.g., age × sleep), with early stopping to curb overfit.
+
+-   **Random Forest:** grid over `n_estimators`, `max_depth`, `min_samples_leaf`, and `max_features`, with `class_weight="balanced"` to counter class skew. RF offers a variance-tolerant non-linear baseline and a check on whether complex structure beats linear interpretability.\
+    **Selection metrics**: We evaluated models using three complementary metrics that together capture discrimination, calibration, and real-world screening value.
+
+-   **ROC AUC (primary discrimination):** Measures how well models rank prediabetes risk across all thresholds, making it ideal for model selection before deciding on an operating threshold.
+
+-   **Brier score (calibration):** Penalizes probability errors—lower values indicate better calibration. This metric shows whether predicted probabilities (e.g., 0.70) reflect actual observed risk, which is important when using outputs to guide referral intensity.
+
+-   **PR AUC (class-focused):** Given the \~42% prevalence of class 1, PR AUC summarizes the precision–recall trade-off for the positive class, highlighting how many false positives occur at higher sensitivity levels.
 
 # Initial Results
 
-**Null model (majority class, CV)**
-- Accuracy **0.577**, ROC AUC **0.500**, PR AUC **0.423**, Brier **0.423**.
-This establishes a lower bound and shows that naive majority-class guessing provides no discrimination. A model that predicts all respondents as “not prediabetic” achieves roughly 58% accuracy due to class imbalance but fails to distinguish between healthy and at-risk individuals, underscoring the importance of informative features for screening.
+**Null model (majority class, CV)** - Accuracy **0.577**, ROC AUC **0.500**, PR AUC **0.423**, Brier **0.423**. This establishes a lower bound and shows that naive majority-class guessing provides no discrimination. A model that predicts all respondents as “not prediabetic” achieves roughly 58% accuracy due to class imbalance but fails to distinguish between healthy and at-risk individuals, underscoring the importance of informative features for screening.
 
 ## Cross-validation comparison (training folds; mean)
 
-| workflow | acc | bacc | brier | roc_auc | pr_auc |
-|-----------|------:|------:|------:|------:|------:|
-| LogReg L2 (LR-CV) | 0.656045 | 0.639970 | 0.213509 | 0.707754 | 0.605266 |
-| LogReg EN + Calib | 0.656044 | 0.638416 | 0.213511 | 0.707470 | 0.604532 |
-| LogReg ElasticNet | 0.657516 | 0.641400 | 0.213629 | 0.707361 | 0.604254 |
-| RandomForest (tuned) | 0.650890 | 0.654314 | 0.218402 | 0.698844 | 0.589840 |
-| HGB T1 (balanced, rich grid) | 0.643541 | 0.630623 | 0.218507 | 0.689792 | 0.568617 |
-| HGB T2 (deeper, rich grid) | 0.628831 | 0.611288 | 0.222756 | 0.675514 | 0.560850 |
+| workflow                         |      acc |     bacc |    brier |  roc_auc |   pr_auc |
+|------------|-----------:|-----------:|-----------:|-----------:|-----------:|
+| **LogReg L2 (LR-CV)**            | 0.656045 | 0.639970 | 0.213509 | 0.707754 | 0.605266 |
+| **LogReg EN + Calib**            | 0.656044 | 0.638416 | 0.213511 | 0.707470 | 0.604532 |
+| **LogReg ElasticNet**            | 0.657516 | 0.641400 | 0.213629 | 0.707361 | 0.604254 |
+| **RandomForest (tuned)**         | 0.650890 | 0.654314 | 0.218402 | 0.698844 | 0.589840 |
+| **HGB T1 (balanced, rich grid)** | 0.643541 | 0.630623 | 0.218507 | 0.689792 | 0.568617 |
+| **HGB T2 (deeper, rich grid)**   | 0.628831 | 0.611288 | 0.222756 | 0.675514 | 0.560850 |
 
 The cross-validation results show that the regularized logistic regression models consistently outperform tree-based methods across all metrics. The **L2 logistic regression** achieves the best overall balance between discrimination (ROC AUC ≈ 0.71) and calibration (Brier ≈ 0.21), indicating stable, interpretable predictions with well-calibrated probabilities compared to the more variable ensemble models.
 
-**Winner:** **LogReg L2 (LR-CV)** by ROC AUC and Brier.  
+**Winner:** **LogReg L2 (LR-CV)** by ROC AUC and Brier.
 
 ## Test set (held-out)
 
-- **Probabilities (no thresholding)**  
-  ROC AUC **0.717**, PR AUC **0.615**, Brier **0.210**, prevalence **0.423**.  
-  These metrics show that the model generalizes well beyond training data. The ROC AUC of 0.717 indicates strong discrimination between at-risk and healthy individuals, while the Brier score of 0.210 suggests well-calibrated probability estimates that closely reflect real-world outcomes.  
+-   **Probabilities (no thresholding)**\
+    ROC AUC **0.717**, PR AUC **0.615**, Brier **0.210**, prevalence **0.423**.\
+    These metrics show that the model generalizes well beyond training data. The ROC AUC of 0.717 indicates strong discrimination between at-risk and healthy individuals, while the Brier score of 0.210 suggests well-calibrated probability estimates that closely reflect real-world outcomes.
 
-- **Thresholded for recall target (selected on validation)**  
-  Threshold **0.3833** → **Precision 0.552**, **Recall 0.763**, **F1 0.641**.  
-  This threshold balances recall and precision, capturing most truly at-risk individuals (high recall) while keeping false positives at a moderate level. The F1 score of 0.64 shows that overall predictive balance remains strong even after emphasizing sensitivity.  
+-   **Thresholded for recall target (selected on validation)**\
+    Threshold **0.3833** → **Precision 0.552**, **Recall 0.763**, **F1 0.641**.\
+    This threshold balances recall and precision, capturing most truly at-risk individuals (high recall) while keeping false positives at a moderate level. The F1 score of 0.64 shows that overall predictive balance remains strong even after emphasizing sensitivity.
 
-  Confusion matrix: **TN 322, FP 267, FN 102, TP 329**.  
-  The matrix shows that out of all test respondents, 329 were correctly identified as at-risk true positives, and 322 were correctly identified as not at-risk, true negatives. The 102 missed cases of false negatives reflect the trade-off for prioritizing recall, while 267 false positives represent individuals flagged for testing who may not have prediabetes—an acceptable outcome in a screening context.
+    Confusion matrix: **TN 322, FP 267, FN 102, TP 329**.\
+    The matrix shows that out of all test respondents, 329 were correctly identified as at-risk true positives, and 322 were correctly identified as not at-risk, true negatives. The 102 missed cases of false negatives reflect the trade-off for prioritizing recall, while 267 false positives represent individuals flagged for testing who may not have prediabetes—an acceptable outcome in a screening context.
 
 **Interpretation:** The penalized logistic regression model performs well on new data, showing strong generalization beyond the training set. After adjusting the prediction threshold to prioritize recall, this setup helps ensure that more at-risk individuals are correctly identified, the model still maintains a reasonable level of precision. The model doesn’t generate too many false alarms despite its focus on sensitivity.
 
 ## Group metrics (test, thresholded)
+
 **Overview.** At the chosen threshold, recall is high across groups (the model catches most truly at-risk people), while precision varies (some groups get more false positives than others). Differences in **prevalence** by group (share labeled 1) help explain some precision variation.
 
-- **Sex**  
-- **Female (n = 552, prevalence = 0.378623):** precision **0.536842**, recall **0.732057**, F1 **0.619433**.   
-  The model is sensitive for women (captures ~73% of positives) with moderate precision (~54%), meaning some extra false positives in service of higher recall.
-- **Male (n = 468, prevalence = 0.474359):** precision **0.565916**, recall **0.792793**, F1 **0.660413**.  
-  Men have higher prevalence and slightly better precision and recall, so the model both finds more true positives and wastes fewer alerts than for women.
-  
-- **Race/ethnicity (top 6 by n)**  
-- **Non-Hispanic White (n = 627, prev = 0.395534):** P **0.518006**, R **0.754032**, F1 **0.614122**.  
-  Balanced recall with moderate precision; many true positives found, with some false positives.
-- **Non-Hispanic Black (n = 99, prev = 0.535354):** P **0.636364**, R **0.792453**, F1 **0.705882**.  
-  High prevalence and strong precision/recall pair; the model flags risk efficiently here.
-- **Other Hispanic (n = 99, prev = 0.393939):** P **0.526316**, R **0.769231**, F1 **0.625000**.  
-  Recall-leaning with moderate precision, similar to NH White.
-- **Mexican American (n = 82, prev = 0.500000):** P **0.666667**, R **0.780488**, F1 **0.719101**.  
-  Among the best trade-offs: high precision and high recall at this threshold.
-- **Non-Hispanic Asian (n = 62, prev = 0.435484):** P **0.525000**, R **0.777778**, F1 **0.626866**.  
-  Strong recall with moderate precision; sample size is smaller, so monitor as data grow.
-- **Other/Multiracial (n = 51, prev = 0.450980):** P **0.708333**, R **0.739130**, F1 **0.723404**.  
-  Highest precision among listed groups with solid recall, but note the smallest n.  
+-   **Sex**
 
-**Note:** The model successfully identifies most at-risk individuals, as shown by its high recall. However, precision varies across groups, suggesting that some adjustments to features or thresholds may help reduce false positives.  
+    -   **Female (n = 552, prevalence = 0.378623):** precision **0.536842**, recall **0.732057**, F1 **0.619433**.\
+        The model is sensitive for women (captures \~73% of positives) with moderate precision (\~54%), meaning some extra false positives in service of higher recall.
+
+    -   **Male (n = 468, prevalence = 0.474359):** precision **0.565916**, recall **0.792793**, F1 **0.660413**.\
+        Men have higher prevalence and slightly better precision and recall, so the model both finds more true positives and wastes fewer alerts than for women.
+
+-   **Race/ethnicity (top 6 by n)**
+
+    -   **Non-Hispanic White (n = 627, prev = 0.395534):** P **0.518006**, R **0.754032**, F1 **0.614122**.\
+        Balanced recall with moderate precision; many true positives found, with some false positives.
+
+    -   **Non-Hispanic Black (n = 99, prev = 0.535354):** P **0.636364**, R **0.792453**, F1 **0.705882**.\
+        High prevalence and strong precision/recall pair; the model flags risk efficiently here.
+
+    -   **Other Hispanic (n = 99, prev = 0.393939):** P **0.526316**, R **0.769231**, F1 **0.625000**.\
+        Recall-leaning with moderate precision, similar to NH White.
+
+    -   **Mexican American (n = 82, prev = 0.500000):** P **0.666667**, R **0.780488**, F1 **0.719101**.\
+        Among the best trade-offs: high precision and high recall at this threshold.
+
+    -   **Non-Hispanic Asian (n = 62, prev = 0.435484):** P **0.525000**, R **0.777778**, F1 **0.626866**.\
+        Strong recall with moderate precision; sample size is smaller, so monitor as data grow.
+
+    -   **Other/Multiracial (n = 51, prev = 0.450980):** P **0.708333**, R **0.739130**, F1 **0.723404**.\
+        Highest precision among listed groups with solid recall, but note the smallest n.
+
+**Note:** The model successfully identifies most at-risk individuals, as shown by its high recall. However, precision varies across groups, suggesting that some adjustments to features or thresholds may help reduce false positives.
 
 ## Curves & calibration
 
-**1. ROC Curve – Model Discrimination**  
-![ROC curve (test)](roc_curve_test.png){width=55%}  
+**1. ROC Curve – Model Discrimination**\
+![ROC curve (test)](roc_curve_test.png){width="55%"}
 
-The ROC curve shows that the model distinguishes reasonably well between likely and unlikely prediabetes cases, with an AUC of about 0.72.  
+The ROC curve shows that the model distinguishes reasonably well between likely and unlikely prediabetes cases, with an AUC of about 0.72.
 
-**2. Precision–Recall Curve – Positive Class Performance**  
-![Precision–Recall curve (test)](pr_curve_test.png){width=45%} 
+**2. Precision–Recall Curve – Positive Class Performance**\
+![Precision–Recall curve (test)](pr_curve_test.png){width="45%"}
 
-The Precision–Recall curve indicates strong recall with moderate precision, showing the model performs well for identifying at-risk individuals in an imbalanced dataset.  
+The Precision–Recall curve indicates strong recall with moderate precision, showing the model performs well for identifying at-risk individuals in an imbalanced dataset.
 
-**3. Calibration Plot – Probability Reliability**  
-![Calibration plot (test)](calibration_test.png){width=45%}  
+**3. Calibration Plot – Probability Reliability**\
+![Calibration plot (test)](calibration_test.png){width="45%"}
 
-The calibration plot shows that predicted probabilities align closely with observed outcomes—suggesting the model’s probability estimates are reliable.  
+The calibration plot shows that predicted probabilities align closely with observed outcomes—suggesting the model’s probability estimates are reliable.
 
-**Calibration:**  
-The model’s predicted probabilities are reasonably accurate — the Brier score (≈ 0.21) indicates that the probabilities align well with actual outcomes. This means that when the model predicts a 70% chance of prediabetes, that estimate tends to reflect real-world likelihood fairly closely.  
+**Calibration:**\
+The model’s predicted probabilities are reasonably accurate — the Brier score (≈ 0.21) indicates that the probabilities align well with actual outcomes. This means that when the model predicts a 70% chance of prediabetes, that estimate tends to reflect real-world likelihood fairly closely.
 
-Together, these curves show that the model achieves a strong balance between discrimination, reliability, and practical screening utility. The ROC and PR curves confirm that the model effectively ranks and identifies individuals at metabolic risk, even in a moderately imbalanced dataset. The calibration plot and Brier score suggest its probability estimates are trustworthy enough for real-world use, meaning the model could reasonably support survey-based prediabetes screening and referral decisions in public health settings.  
+Together, these curves show that the model achieves a strong balance between discrimination, reliability, and practical screening utility. The ROC and PR curves confirm that the model effectively ranks and identifies individuals at metabolic risk, even in a moderately imbalanced dataset. The calibration plot and Brier score suggest its probability estimates are trustworthy enough for real-world use, meaning the model could reasonably support survey-based prediabetes screening and referral decisions in public health settings.
