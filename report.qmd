@@ -292,13 +292,13 @@ Feature creation focused on aligning predictors with **realistic screening conte
 ## Cross-validation comparison (training folds; mean)
 
 | workflow                         |      acc |     bacc |    brier |  roc_auc |   pr_auc |
-|------------|-----------:|-----------:|-----------:|-----------:|-----------:|
-| **LogReg L2 (LR-CV)**            | 0.656045 | 0.639970 | 0.213509 | 0.707754 | 0.605266 |
-| **LogReg EN + Calib**            | 0.656044 | 0.638416 | 0.213511 | 0.707470 | 0.604532 |
-| **LogReg ElasticNet**            | 0.657516 | 0.641400 | 0.213629 | 0.707361 | 0.604254 |
-| **RandomForest (tuned)**         | 0.650890 | 0.654314 | 0.218402 | 0.698844 | 0.589840 |
-| **HGB T1 (balanced, rich grid)** | 0.643541 | 0.630623 | 0.218507 | 0.689792 | 0.568617 |
-| **HGB T2 (deeper, rich grid)**   | 0.628831 | 0.611288 | 0.222756 | 0.675514 | 0.560850 |
+|-------------------------:|-----------:|-----------:|-----------:|-----------:|
+| **LogReg L2 (LR-CV)**            |  0.656   | 0.640    | 0.210    | 0.717    | 0.615    |
+| **LogReg EN + Calib**            |  0.656   | 0.638    | 0.214    | 0.707    | 0.605    |
+| **LogReg ElasticNet**            |  0.658   | 0.641    | 0.214    | 0.707    | 0.604    |
+| **RandomForest (tuned)**         |  0.651   | 0.654    | 0.218    | 0.699    | 0.590    |
+| **HGB T1 (balanced, rich grid)** |  0.644   | 0.631    | 0.219    | 0.690    | 0.569    |
+| **HGB T2 (deeper, rich grid)**   |  0.629   | 0.611    | 0.223    | 0.676    | 0.561    |
 
 The cross-validation results show that the regularized logistic regression models consistently outperform tree-based methods across all metrics. The **L2 logistic regression** achieves the best overall balance between discrimination (ROC AUC ≈ 0.71) and calibration (Brier ≈ 0.21), indicating stable, interpretable predictions with well-calibrated probabilities compared to the more variable ensemble models.
 
