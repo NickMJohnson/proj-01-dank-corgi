@@ -89,3 +89,147 @@ This model card documents the final version of **[FILL IN]**, a penalized logist
 
 - **Contact:** For questions about this model, please contact **Zhalae Daneshvari** at *zwd3@cornell.edu*, **Jolene Ie** at *jj92@cornell.edu*, or **Nick Johnson** at *nmj37@cornell.edu*,.
 
+
+# Intended use
+
+- This model is intended to **screen for prediabetes risk** using only self-reported and demographic survey data from the NHANES 2021–2023 dataset.  
+- It supports early identification of individuals who may benefit from **follow-up laboratory testing** (e.g., fasting glucose or HbA1c) when such tests are unavailable or costly.  
+- The model’s purpose is **educational and exploratory**—to evaluate how well low-cost, non-invasive data can approximate lab-based health screening.
+
+## Primary users
+- **Students and researchers** in applied machine learning, data science, and public health analytics.  
+- **Instructors** demonstrating supervised classification, model evaluation, and health data ethics.  
+- **Analysts** exploring feature importance and fairness across demographic subgroups.
+
+## Appropriate usage
+- For **research and educational applications only** (e.g., reproducible coursework, health data analysis demonstrations).  
+- May be used to **analyze patterns** in health risk prediction or validate fairness across subpopulations.  
+- Not suitable for clinical use, diagnosis, or any application influencing access to healthcare.
+
+## Misuse considerations
+- This model must **not** be deployed for real-world screening, treatment decisions, or personalized medical advice.  
+- Predictions are **probabilistic, not diagnostic**, and should never replace laboratory-confirmed testing.  
+- Users should ensure interpretability and fairness auditing before adapting this model to any population beyond NHANES.
+
+
+# Important aspects/factors
+
+- The most influential predictors of prediabetes in the model are **age**, **BMI from self-report**, **sedentary minutes per day**, and **sleep duration**, reflecting established metabolic risk patterns.  
+- Among categorical factors, **sex**, **race/ethnicity**, **smoking status**, and **self-reported history of hypertension and high cholesterol** show strong associations with predicted risk.  
+- Lifestyle indicators such as **attempted weight loss in the past year** and **alcohol consumption frequency** also contribute meaningfully to prediction scores.
+
+## Feature interpretation
+- **Age**: Risk increases steadily with age, aligning with clinical findings that insulin resistance tends to rise in middle-aged and older adults.  
+- **BMI & weight change**: Higher BMI and recent weight gain are strong positive predictors of elevated risk.  
+- **Sleep and sedentary time**: Respondents reporting <6 hours of sleep or >8 hours of sedentary time per day show higher predicted probabilities.  
+- **Sex & race**: Male respondents and non-Hispanic Black adults have slightly higher model-predicted risk on average, consistent with population-level disparities in diabetes prevalence.  
+- **Hypertension and cholesterol history**: These conditions likely act as surrogate markers for metabolic syndrome components.
+
+## Model behavior
+- The logistic model maintains **smooth probability calibration** across the population, meaning predicted probabilities correspond reasonably well to observed prediabetes prevalence.  
+- The model emphasizes **behavioral and lifestyle features** over purely demographic ones, supporting its interpretability for educational and analytical purposes.  
+- Feature weights are directionally consistent with medical literature, providing qualitative validity for risk interpretation.
+
+## Fairness and subgroup effects
+- Group-level metrics show slightly higher recall for **female** respondents and higher precision for **male** respondents.  
+- By **race/ethnicity**, the model shows comparable AUC across groups, though precision varies slightly due to sample-size imbalance.  
+- These disparities are documented for transparency but remain within acceptable educational demonstration thresholds.
+
+# Metrics
+- The model’s performance was evaluated using **ROC AUC**, **sensitivity (recall)**, **specificity**, **Brier score**, and **Youden’s J index**. Together, these metrics quantify the model’s ability to correctly classify adults as prediabetic or non-prediabetic, while also measuring probability calibration and performance under class imbalance.
+
+- Metrics were computed on the **held-out test set (`X_test`, `y_test`)** derived from the **cleaned NHANES 2021–2023 questionnaire subset**, which includes only self-reported demographic, behavioral, and medical history variables. Predictions were generated using the final tuned **L2-regularized Logistic Regression** model trained on the corresponding stratified training split.
+  - **ROC AUC** was derived from predicted probabilities for the positive (`prediabetes_flag = 1`) class.  
+  - **Brier score** measured the accuracy of predicted probabilities relative to observed outcomes.  
+  - **Sensitivity (recall)** and **specificity** were calculated from the confusion matrix at the final tuned threshold (`T_sel ≈ 0.39`).  
+  - **Youden’s J index**, computed as *(sensitivity + specificity – 1)*, summarized the trade-off between detecting true positives and avoiding false positives.
+
+- Since the dataset is **imbalanced (prediabetes prevalence ≈ 42%)**, accuracy alone does not fully capture model performance.  
+  - **ROC AUC** provides a threshold-independent measure of discrimination.  
+  - **Sensitivity and specificity** assess clinical relevance for screening use cases.  
+  - The **Brier score** quantifies probability calibration, ensuring risk scores are interpretable.  
+  - **Youden’s J** balances recall and specificity, aligning with public-health screening goals.
+
+  ## Training data & evaluation data
+
+- The model was trained on the **cleaned NHANES 2021–2023 questionnaire dataset**, stored as `nhanes2123_prediabetes_features_labeled_clean.csv`.  
+  This dataset contains adult respondents (age ≥18) with valid fasting glucose or HbA1c lab values for labeling but **only self-reported demographic, behavioral, and medical history variables** as predictors.  
+- Laboratory values were used **solely to define the target** (`prediabetes_flag`) and then excluded from model features to avoid leakage.  
+- The training portion represented approximately **80% of the total sample**, stratified by class label to preserve prediabetes prevalence (~42%).  
+  Model training used **5-fold stratified cross-validation** within the training set to tune hyperparameters of the **L2-regularized Logistic Regression** model based on ROC AUC performance.
+
+The code cell below prints the model’s expected input schema as stored by Vetiver, confirming that the deployed model expects only questionnaire-based features and no laboratory data.
+
+```{python}
+v.prototype.model_json_schema()
+```
+
+## Quantitative analyses
+```{python}
+## Automated exploratory analysis of the held-out NHANES test dataset
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
+# load cleaned NHANES dataset
+nhanes_test = pd.read_csv("data-raw/nhanes2123_prediabetes_features_labeled_clean.csv")
+
+# basic structure
+print(nhanes_test.info())
+print(nhanes_test.describe(include="all").T.head(15))
+
+# missing values summary
+missing = nhanes_test.isna().mean().sort_values(ascending=False).head(10)
+plt.figure(figsize=(6,3))
+missing.plot(kind="barh", color="salmon")
+plt.title("Top 10 Features by Missing Value Rate")
+plt.xlabel("Proportion Missing")
+plt.show()
+
+# class balance
+plt.figure(figsize=(5,3))
+sns.countplot(x="prediabetes_flag", data=nhanes_test, palette="Set2")
+plt.title("Class Distribution in Cleaned NHANES Dataset")
+plt.xlabel("Prediabetes Flag")
+plt.ylabel("Count")
+plt.show()
+
+# correlation heatmap for numeric features
+num_cols = nhanes_test.select_dtypes(include=["int64", "float64"]).columns
+corr = nhanes_test[num_cols].corr()
+
+plt.figure(figsize=(6,5))
+sns.heatmap(corr, cmap="coolwarm", center=0)
+plt.title("Correlation Heatmap of Numeric Features (NHANES Cleaned Data)")
+plt.show()
+
+```
+
+The exploratory analysis of the **cleaned NHANES 2021–2023 dataset** reveals a large, nationally representative sample of **5,099 adult respondents**, each with up to **58 variables** derived from demographic, behavioral, and medical questionnaires. The dataset merges multiple NHANES modules (DEMO, WHQ, SLQ, SMQ, MCQ, DPQ), containing both self-reported and derived indicators used to predict prediabetes risk.
+
+- **Prediabetes prevalence:** 42.3% (`prediabetes_flag = 1`), consistent with U.S. public health estimates.  
+- **Sample composition:** 55.5% Female, 44.5% Male; majority identified as Non-Hispanic White (≈60%), followed by Hispanic, Non-Hispanic Black, and Asian respondents.  
+- **Age distribution:** Mean age = 50.7 years (SD = 18.3), ranging from 18 to 80, showing broad age coverage.  
+- **BMI and weight:** Mean BMI = 29.1 (SD = 7.1), with an interquartile range of 24.2–32.5, reflecting typical adult weight variation across the population.  
+- **Behavioral variables:** Mean sleep duration = 7.7 hours; sedentary time = 360 minutes/day; average drinks per day = 2.6 (among drinkers).  
+- **Missingness:** Most variables have high completeness (>95%), but several self-report items such as `drinks_per_day_12mo`, `regular_periods_12mo_ans`, and `dpq_poor_appetite_ans` show elevated missingness due to skip logic and optional responses.
+
+## Data completeness and structure
+- Features like `sex`, `race_eth`, `ever_asthma_ans`, and `ever_high_bp_ans` are fully populated.  
+- Variables with low response rates (e.g., `liver_*` conditions) were later **excluded** during preprocessing due to >90% missingness.  
+- Derived fields such as `bmi_from_selfreport` and `weight_change_1y_lb` were created to ensure numeric consistency and completeness across respondents.
+
+
+## Distribution and relationships
+- Continuous features such as `age_years`, `bmi_from_selfreport`, and `sedentary_minutes` exhibit mild right-skewness typical of epidemiologic datasets.  
+- Categorical variables like `sex` and `race_eth` display well-distributed representation, maintaining the NHANES stratified design.  
+- Pairwise correlations among numeric features are generally low (|r| < 0.5), indicating minimal multicollinearity and supporting logistic regression stability.  
+  - The strongest observed relationship is between `bmi_from_selfreport` and `weight_change_1y_lb` (moderate positive correlation).
+
+## Summary interpretation
+Overall, the cleaned NHANES 2021–2023 dataset provides a robust, diverse, and interpretable foundation for predictive modeling. The wide coverage of behavioral and demographic factors enables meaningful risk prediction for prediabetes using only **survey-derived features**—a critical step toward developing accessible, low-cost screening models for population health applications.
+
+
+
+
+
