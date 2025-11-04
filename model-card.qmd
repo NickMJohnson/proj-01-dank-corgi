@@ -96,17 +96,17 @@ This model card documents the final version of **[FILL IN]**, a penalized logist
 - It supports early identification of individuals who may benefit from **follow-up laboratory testing** (e.g., fasting glucose or HbA1c) when such tests are unavailable or costly.  
 - The model’s purpose is **educational and exploratory**—to evaluate how well low-cost, non-invasive data can approximate lab-based health screening.
 
-## Primary users
+### Primary users
 - **Students and researchers** in applied machine learning, data science, and public health analytics.  
 - **Instructors** demonstrating supervised classification, model evaluation, and health data ethics.  
 - **Analysts** exploring feature importance and fairness across demographic subgroups.
 
-## Appropriate usage
+### Appropriate usage
 - For **research and educational applications only** (e.g., reproducible coursework, health data analysis demonstrations).  
 - May be used to **analyze patterns** in health risk prediction or validate fairness across subpopulations.  
 - Not suitable for clinical use, diagnosis, or any application influencing access to healthcare.
 
-## Misuse considerations
+### Misuse considerations
 - This model must **not** be deployed for real-world screening, treatment decisions, or personalized medical advice.  
 - Predictions are **probabilistic, not diagnostic**, and should never replace laboratory-confirmed testing.  
 - Users should ensure interpretability and fairness auditing before adapting this model to any population beyond NHANES.
@@ -118,19 +118,19 @@ This model card documents the final version of **[FILL IN]**, a penalized logist
 - Among categorical factors, **sex**, **race/ethnicity**, **smoking status**, and **self-reported history of hypertension and high cholesterol** show strong associations with predicted risk.  
 - Lifestyle indicators such as **attempted weight loss in the past year** and **alcohol consumption frequency** also contribute meaningfully to prediction scores.
 
-## Feature interpretation
+### Feature interpretation
 - **Age**: Risk increases steadily with age, aligning with clinical findings that insulin resistance tends to rise in middle-aged and older adults.  
 - **BMI & weight change**: Higher BMI and recent weight gain are strong positive predictors of elevated risk.  
 - **Sleep and sedentary time**: Respondents reporting <6 hours of sleep or >8 hours of sedentary time per day show higher predicted probabilities.  
 - **Sex & race**: Male respondents and non-Hispanic Black adults have slightly higher model-predicted risk on average, consistent with population-level disparities in diabetes prevalence.  
 - **Hypertension and cholesterol history**: These conditions likely act as surrogate markers for metabolic syndrome components.
 
-## Model behavior
+### Model behavior
 - The logistic model maintains **smooth probability calibration** across the population, meaning predicted probabilities correspond reasonably well to observed prediabetes prevalence.  
 - The model emphasizes **behavioral and lifestyle features** over purely demographic ones, supporting its interpretability for educational and analytical purposes.  
 - Feature weights are directionally consistent with medical literature, providing qualitative validity for risk interpretation.
 
-## Fairness and subgroup effects
+### Fairness and subgroup effects
 - Group-level metrics show slightly higher recall for **female** respondents and higher precision for **male** respondents.  
 - By **race/ethnicity**, the model shows comparable AUC across groups, though precision varies slightly due to sample-size imbalance.  
 - These disparities are documented for transparency but remain within acceptable educational demonstration thresholds.
@@ -150,7 +150,7 @@ This model card documents the final version of **[FILL IN]**, a penalized logist
   - The **Brier score** quantifies probability calibration, ensuring risk scores are interpretable.  
   - **Youden’s J** balances recall and specificity, aligning with public-health screening goals.
 
-  ## Training data & evaluation data
+# Training data & evaluation data
 
 - The model was trained on the **cleaned NHANES 2021–2023 questionnaire dataset**, stored as `nhanes2123_prediabetes_features_labeled_clean.csv`.  
   This dataset contains adult respondents (age ≥18) with valid fasting glucose or HbA1c lab values for labeling but **only self-reported demographic, behavioral, and medical history variables** as predictors.  
@@ -161,10 +161,10 @@ This model card documents the final version of **[FILL IN]**, a penalized logist
 The code cell below prints the model’s expected input schema as stored by Vetiver, confirming that the deployed model expects only questionnaire-based features and no laboratory data.
 
 ```{python}
-v.prototype.model_json_schema()
+# v.prototype.model_json_schema()
 ```
 
-## Quantitative analyses
+# Quantitative analyses
 ```{python}
 ## Automated exploratory analysis of the held-out NHANES test dataset
 import matplotlib.pyplot as plt
@@ -205,31 +205,153 @@ plt.show()
 
 ```
 
-The exploratory analysis of the **cleaned NHANES 2021–2023 dataset** reveals a large, nationally representative sample of **5,099 adult respondents**, each with up to **58 variables** derived from demographic, behavioral, and medical questionnaires. The dataset merges multiple NHANES modules (DEMO, WHQ, SLQ, SMQ, MCQ, DPQ), containing both self-reported and derived indicators used to predict prediabetes risk.
-
-- **Prediabetes prevalence:** 42.3% (`prediabetes_flag = 1`), consistent with U.S. public health estimates.  
-- **Sample composition:** 55.5% Female, 44.5% Male; majority identified as Non-Hispanic White (≈60%), followed by Hispanic, Non-Hispanic Black, and Asian respondents.  
-- **Age distribution:** Mean age = 50.7 years (SD = 18.3), ranging from 18 to 80, showing broad age coverage.  
-- **BMI and weight:** Mean BMI = 29.1 (SD = 7.1), with an interquartile range of 24.2–32.5, reflecting typical adult weight variation across the population.  
-- **Behavioral variables:** Mean sleep duration = 7.7 hours; sedentary time = 360 minutes/day; average drinks per day = 2.6 (among drinkers).  
-- **Missingness:** Most variables have high completeness (>95%), but several self-report items such as `drinks_per_day_12mo`, `regular_periods_12mo_ans`, and `dpq_poor_appetite_ans` show elevated missingness due to skip logic and optional responses.
-
-## Data completeness and structure
-- Features like `sex`, `race_eth`, `ever_asthma_ans`, and `ever_high_bp_ans` are fully populated.  
-- Variables with low response rates (e.g., `liver_*` conditions) were later **excluded** during preprocessing due to >90% missingness.  
-- Derived fields such as `bmi_from_selfreport` and `weight_change_1y_lb` were created to ensure numeric consistency and completeness across respondents.
+The exploratory data analysis of the **cleaned NHANES 2021–2023 dataset** provides a comprehensive overview of **5,099 adult respondents** and **58 questionnaire-derived variables** used for prediabetes risk modeling. This dataset integrates demographic, lifestyle, and medical history modules (DEMO, WHQ, SLQ, SMQ, MCQ, DPQ), where **laboratory values were excluded** to maintain generalizability for non-clinical screening.
 
 
-## Distribution and relationships
-- Continuous features such as `age_years`, `bmi_from_selfreport`, and `sedentary_minutes` exhibit mild right-skewness typical of epidemiologic datasets.  
-- Categorical variables like `sex` and `race_eth` display well-distributed representation, maintaining the NHANES stratified design.  
-- Pairwise correlations among numeric features are generally low (|r| < 0.5), indicating minimal multicollinearity and supporting logistic regression stability.  
-  - The strongest observed relationship is between `bmi_from_selfreport` and `weight_change_1y_lb` (moderate positive correlation).
-
-## Summary interpretation
-Overall, the cleaned NHANES 2021–2023 dataset provides a robust, diverse, and interpretable foundation for predictive modeling. The wide coverage of behavioral and demographic factors enables meaningful risk prediction for prediabetes using only **survey-derived features**—a critical step toward developing accessible, low-cost screening models for population health applications.
+### Overall distribution and completeness
+- **Prediabetes prevalence:** 42.3% (`prediabetes_flag = 1`), confirming the expected mid-range population-level prevalence.  
+- **Demographics:** Mean age = 50.7 years (SD = 18.3, range = 18–80); 55.5% Female, 44.5% Male.  
+  Most respondents identified as **Non-Hispanic White (60%)**, followed by Hispanic, Non-Hispanic Black, and Asian groups.  
+- **Behavioral variables:** Average sleep = 7.7 hours, sedentary time ≈ 360 minutes/day, average drinks per day = 2.6 (among current drinkers).  
+- **Physical measures:** Mean BMI = 29.1 (IQR 24.2–32.5), consistent with national overweight/obesity trends.
 
 
+### Missingness and data quality
+The **top 10 features by missingness** (visualized in the red bar chart) are dominated by low-response clinical liver condition variables:
+- `liver_fatty_code`, `liver_fatty_ans`, `liver_cirrhosis_code`, `liver_autoimmune_hep_code`, and `liver_viral_hep_code` all exceed **90–99% missingness**, primarily due to restricted exam subsampling and post-survey questions.  
+- These features were therefore **excluded during preprocessing** to avoid introducing bias or instability.
+
+By contrast, core questionnaire items such as `age_years`, `sex`, `race_eth`, `ever_high_bp_ans`, and `ever_high_chol_ans` maintain near-complete coverage (>98%), confirming reliability for modeling.
 
 
+### Class balance
+The **class distribution plot** (green vs. orange bars) shows moderate imbalance, with a slightly larger proportion of non-prediabetic respondents (`0`) compared to prediabetic respondents (`1`).  This class ratio (~58% vs. 42%) aligns with the overall NHANES 2021–2023 health survey estimates, supporting external validity of the labeling process.
 
+
+### Correlation structure
+The **correlation heatmap** of numeric variables shows several important relationships:
+- `bmi_from_selfreport`, `weight_lb`, and `height_in` form a coherent anthropometric cluster.  
+- `sedentary_minutes` and `sleep_hours_weekdays` display minimal correlation, suggesting independent behavioral effects.  
+- Disease history variables (e.g., `ever_high_bp_code`, `ever_high_chol_code`, `ever_asthma_code`) exhibit low intercorrelation (|r| < 0.3), confirming low multicollinearity suitable for regression-based models.  
+- The outcome variable `prediabetes_flag` is most correlated with **BMI**, **age**, and **ever_high_bp_code**, which aligns with established metabolic risk literature.
+
+### Summary interpretation
+This quantitative analysis confirms that the cleaned NHANES dataset is **representative, well-balanced, and structurally sound** for supervised learning tasks. Despite the presence of highly incomplete clinical liver features, the retained 50+ questionnaire-based variables provide robust and interpretable predictors. The distributions across demographics, lifestyle, and self-reported medical history support the use of **logistic regression and tree-based models** for generalizable prediabetes risk prediction.
+
+## Overall model performance
+```{python}
+## compute predictions for evaluation data
+
+# Predict probabilities and classes for the NHANES test set
+X_test = nhanes_test.drop(columns=["prediabetes_flag"])
+y_test = nhanes_test["prediabetes_flag"]
+
+# ensure encoding consistency
+X_test = pd.get_dummies(X_test, drop_first=True)
+
+if "columns" in v.metadata.user:
+    expected_cols = v.metadata.user["columns"]
+else:
+    expected_cols = v.prototype.model_json_schema()["properties"].keys()
+
+X_test = X_test.reindex(columns=expected_cols, fill_value=0)
+
+from sklearn.metrics import accuracy_score, brier_score_loss, roc_auc_score
+
+proba = v.model.predict_proba(X_test)
+class_index = list(v.model.classes_).index(1)
+y_prob_pos = proba[:, class_index]
+y_pred = v.model.predict(X_test)
+
+metrics_test = {
+    "accuracy": accuracy_score(y_test, y_pred),
+    "roc_auc": roc_auc_score(y_test, y_prob_pos),
+    "brier_score": brier_score_loss(y_test, y_prob_pos, pos_label=1),
+}
+
+pd.DataFrame(metrics_test.items(), columns=["Metric", "Value"])
+```
+
+
+## Disagregatted Model Performance 
+```{python}
+results = []
+if "columns" in v.metadata.user:
+expected_cols = v.metadata.user["columns"]
+else:
+expected_cols = v.prototype.model_json_schema()["properties"].keys()
+
+for race, group in nhanes_test.groupby("race_eth"):
+X_group = group.drop(columns=["prediabetes_flag"])
+y_group = group["prediabetes_flag"]
+X_group = pd.get_dummies(X_group, drop_first=True)
+X_group = X_group.reindex(columns=expected_cols, fill_value=0)
+
+```
+
+
+## Visualizing Model Performance
+```{python}
+from sklearn.calibration import CalibrationDisplay
+from sklearn.metrics import RocCurveDisplay
+import matplotlib.pyplot as plt
+
+# model predictions
+
+y_prob = v.model.predict_proba(X_test)[:, list(v.model.classes_).index(1)]
+y_pred = v.model.predict(X_test)
+
+# calibration curve
+
+plt.figure(figsize=(6, 5))
+CalibrationDisplay.from_predictions(y_test, y_prob, n_bins=10)
+plt.title("Calibration Plot: Predicted vs. Actual Probability (NHANES Test Set)")
+plt.grid(True)
+plt.show()
+
+# ROC curve
+
+plt.figure(figsize=(6, 5))
+RocCurveDisplay.from_predictions(y_test, y_prob)
+plt.title("ROC Curve: NHANES Test Set")
+plt.grid(True)
+plt.show()
+
+```
+
+## Custom Plots
+
+```{python}
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
+# extract feature coefficients from logistic regression
+
+coeffs = v.model.coef_.flatten()
+if "columns" in v.metadata.user:
+feature_names = v.metadata.user["columns"]
+else:
+feature_names = list(v.prototype.model_json_schema()["properties"].keys())
+
+# create dataframe of coefficients
+
+coef_df = pd.DataFrame({
+"Feature": feature_names,
+"Coefficient": coeffs
+}).sort_values("Coefficient", ascending=False)
+
+top_pos = coef_df.head(10)
+top_neg = coef_df.tail(10)
+coef_plot = pd.concat([top_pos, top_neg])
+
+plt.figure(figsize=(8, 6))
+plt.barh(coef_plot["Feature"], coef_plot["Coefficient"], color=np.where(coef_plot["Coefficient"] > 0, "tomato", "steelblue"))
+plt.xlabel("Coefficient Value")
+plt.ylabel("Feature")
+plt.title("Top Positive and Negative Predictors (Logistic Regression)")
+plt.gca().invert_yaxis()
+plt.grid(alpha=0.3)
+plt.show()
+
+```
