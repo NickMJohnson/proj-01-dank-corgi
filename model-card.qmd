@@ -1,0 +1,91 @@
+---
+title: "Model Card: [FILL IN]"
+author: "Zhalae Daneshvari, Jolene Ie, Nick Johnson"
+format: typst
+execute:
+  echo: false
+  message: false
+  warning: false
+---
+
+```{python}
+# from IPython.display import display, Markdown
+# import datetime
+# display(Markdown(f"""
+# ###### {datetime.date.today()}
+# """))
+```
+
+```{python}
+#| tags: [parameters]
+#| include: false
+# import pins
+# from dotenv import load_dotenv, find_dotenv
+# load_dotenv(find_dotenv())
+
+# board for project storage
+
+# board = pins.board_gcs(path = "info-4940-models/[FILL-IN]/", allow_pickle_read = True)__
+```
+
+```{python}
+#| include: false
+# import pandas as pd
+# import numpy as np
+# import matplotlib.pyplot as plt
+# from sklearn import metrics
+# import vetiver
+
+# Load the final model pinned to GCS
+
+# v = vetiver.VetiverModel.from_pin(
+# board, "[FILL IN]", version = "[FILL IN]"
+# )
+```
+
+A [model card](https://doi.org/10.1145/3287560.3287596) provides brief, transparent, responsible reporting for a trained machine learning model.
+
+# Model Details
+
+- Developed by **Zhalae Daneshvari**, **Jolene Ie**, and **Nick Johnson** for INFO 4940 – Fall 2025.  
+
+```{python}
+# model_desc = v.description
+# # num_features = len(v.prototype.construct().dict())
+# num_features = len(v.prototype.model_construct().model_dump())
+
+# display(Markdown(f"""
+# - A {model_desc} using {num_features} feature{'s'[:num_features^1]}.
+# """))
+```
+
+This model card documents the final version of **[FILL IN]**, a penalized logistic regression classifier trained on NHANES 2021–2023 survey data to predict prediabetes risk.
+
+### Pipeline Components
+-  **Preprocessing**: Median imputation (numeric) with indicator flags, constant imputation `"Unknown"` (categorical), one-hot encoding (`min_frequency=0.02`), and standard scaling. 
+- **Model**: Logistic Regression with L2 penalty, tuned over `C ∈ {0.1, 1, 10}` using ROC-AUC scoring in stratified 5-fold CV. 
+- **Evaluation Metrics**: Accuracy, Balanced Accuracy, Brier Score, ROC AUC, and PR AUC measured via nested CV on training and final test set. 
+- **Threshold Tuning**:  Calibrated decision threshold to achieve ≥0.80 recall on validation split. 
+- **Deployment Readiness**: Saved as a Vetiver model and pinned to Google Cloud Storage for reproducible inference. 
+
+
+### Version Metadata
+```{python}
+# import re
+
+# version = v.metadata.version
+# match = re.match(r"(\d{8}T\d{6})", version)
+# if match:
+#     time_created = datetime.datetime.strptime(match.group(1), '%Y%m%dT%H%M%S').strftime('%Y-%m-%d %H:%M:%S')
+# else:
+#     time_created = "Unknown"
+
+# display(Markdown(f"""
+# - Version {version} was created at {time_created}
+# """))
+```
+
+- This model was developed as part of the coursework for INFO 4940/5940 — Applied Machine Learning at Cornell University (Fall 2025). The code and analysis are for educational purposes only and are licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license. The underlying General Social Survey (GSS) data are publicly available and governed by NORC’s data-use policy.
+
+- **Contact:** For questions about this model, please contact **Zhalae Daneshvari** at *zwd3@cornell.edu*, **Jolene Ie** at *jj92@cornell.edu*, or **Nick Johnson** at *nmj37@cornell.edu*,.
+
