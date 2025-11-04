@@ -355,3 +355,35 @@ plt.grid(alpha=0.3)
 plt.show()
 
 ```
+
+
+# Ethical considerations
+This project involved building predictive models on **NHANES 2021–2023 questionnaire data**, which include sensitive demographic, behavioral, and health-related variables. Given the medical nature of the dataset, the primary ethical concern is avoiding **misuse of model outputs** in clinical or policy contexts without proper validation. Although the model uses self-reported, non-laboratory variables to predict prediabetes risk, it should not be interpreted as a diagnostic or clinical decision tool.  
+
+Because NHANES data reflect real-world demographic and health disparities, there is potential for the model to inadvertently **amplify biases** related to socioeconomic status, race/ethnicity, or healthcare access. For example, underrepresentation of specific subgroups or differences in reporting accuracy could lead to systematic over- or underestimation of prediabetes risk for certain populations.  
+
+To mitigate these concerns:
+- The model’s purpose is **educational and exploratory**, focusing on explainability and transparency over raw predictive accuracy.  
+- All features are **interpretable self-reported variables**, and model coefficients are made publicly visible to clarify how predictions are generated.  
+- No personally identifiable information is used, and all results are aggregated to ensure respondent anonymity.  
+
+
+## Caveats & recommendations
+
+This model demonstrates how non-clinical, survey-based data can be used to estimate prediabetes likelihood using accessible health and behavioral information. It provides a valuable learning example for understanding how social, behavioral, and lifestyle factors interact in population-level health risk modeling.
+
+However:
+- The model is **not intended for clinical deployment** and does not establish causal relationships.  
+- Predictions should not be used for individual medical screening or health interventions.  
+- External validation is required before generalizing beyond the NHANES sample, as model coefficients and calibration may differ across demographic or temporal contexts.  
+
+Future improvements could include:
+- Performing **fairness audits** across subpopulations (e.g., by race, sex, or income).  
+- Applying **probability calibration** (e.g., Platt scaling) to refine reliability.  
+- Integrating **resampling or reweighting strategies** to improve minority subgroup performance.  
+- Conducting **temporal validation** on newer NHANES cycles to ensure generalizability.  
+
+Overall, the model aligns with the principles of **responsible, transparent, and equitable data science**, using interpretable methods to explore patterns in public health data while maintaining clear ethical boundaries.
+
+
+
