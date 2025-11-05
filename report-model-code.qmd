@@ -1,5 +1,11 @@
 ---
 title: "INFO 4940 Project 1 Report"
+author: "Zhalae Daneshvari, Jolene Ie, Nick Johnson"
+format: typst
+execute:
+  echo: false
+  message: false
+  warning: false
 ---
 
 # Setup
@@ -682,5 +688,427 @@ plt.tight_layout()
 plt.savefig("calibration_test.png", dpi=200)
 plt.show()
 
+
+```
+
+
+```{python}
+# Add these once (after your existing imports)
+
+from sklearn.inspection import PartialDependenceDisplay, permutation_importance
+from sklearn.base import BaseEstimator, ClassifierMixin
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import re
+
+```
+```{python}
+# --- Unwrap helpers & feature-name utilities ---
+
+def unwrap_model(m):
+    """
+    Returns (pipeline, preprocessor, estimator) regardless of whether the final
+    model is a Pipeline, a GridSearchCV.best_estimator_, or CalibratedClassifierCV.
+    """
+    if hasattr(m, "base_estimator_") and isinstance(m.base_estimator_, Pipeline):
+        pipe = m.base_estimator_
+    elif isinstance(m, Pipeline):
+        pipe = m
+    elif hasattr(m, "best_estimator_") and isinstance(m.best_estimator_, Pipeline):
+        pipe = m.best_estimator_
+    else:
+        raise ValueError("Could not unwrap the final model into a Pipeline.")
+
+    if "prep" not in pipe.named_steps or "clf" not in pipe.named_steps:
+        raise ValueError("Pipeline must have steps named 'prep' and 'clf'.")
+
+    prep = pipe.named_steps["prep"]
+    est = pipe.named_steps["clf"]
+    return pipe, prep, est
+
+
+def get_out_feature_names(prep, input_cols):
+    """
+    Uses ColumnTransformer.get_feature_names_out to recover post-preprocess feature names.
+    """
+    try:
+        return prep.get_feature_names_out(input_cols).tolist()
+    except Exception:
+        return prep.get_feature_names_out().tolist()
+
+
+def original_parent(col_name):
+    """
+    Map a transformed feature name back to its original column group.
+    Handles numeric+indicator names and OneHotEncoder names.
+    """
+    base = re.sub(r"^(num|cat)__", "", col_name)
+
+    if "missing_indicator" in base or base.endswith("_missing_indicator"):
+        return re.sub(r"__?missing_indicator$", "", base) + " (missing)"
+
+    if "_" in base and base.count("_") >= 1:
+        return base.split("_", 1)[0]
+
+    return base
+
+
+
+```
+```{python}
+# --- FIX: make FunctionTransformer name-safe & rebuild preprocessors ---
+
+from sklearn.preprocessing import FunctionTransformer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.base import clone
+
+# Categorical pipeline with feature_names_out defined (prevents the AttributeError)
+cat_pipe_fixed = Pipeline([
+    ("imp", SimpleImputer(strategy="constant", fill_value="Unknown")),
+    ("to_str", FunctionTransformer(lambda X: X.astype(str), feature_names_out="one-to-one")),
+    ("ohe", OneHotEncoder(handle_unknown="ignore", sparse_output=False, min_frequency=0.02)),
+])
+
+# Numeric pipeline (unchanged)
+num_pipe_fixed = Pipeline([
+    ("imp", SimpleImputer(strategy="median", add_indicator=True)),
+    ("sc", StandardScaler()),
+])
+
+# ColumnTransformers mirroring your originals
+preprocess_fixed = ColumnTransformer(
+    transformers=[
+        ("num", num_pipe_fixed, present_numeric),
+        ("cat", cat_pipe_fixed, present_categorical),
+    ],
+    remainder="drop",
+)
+
+# Tree version (mirrors your preprocess_tree but with the fixed to_str)
+cat_pipe_tree_fixed = Pipeline([
+    ("imp", SimpleImputer(strategy="constant", fill_value="Unknown")),
+    ("to_str", FunctionTransformer(lambda X: X.astype(str), feature_names_out="one-to-one")),
+    ("ohe", OneHotEncoder(handle_unknown="ignore", sparse_output=False, min_frequency=0.05)),
+])
+
+preprocess_tree_fixed = ColumnTransformer(
+    transformers=[
+        ("num", SimpleImputer(strategy="median"), present_numeric),
+        ("cat", cat_pipe_tree_fixed, present_categorical),
+    ],
+    remainder="drop",
+)
+
+```
+```{python}
+# --- Build an explain-only pipeline using the fixed preprocessor + your chosen estimator ---
+
+from sklearn.base import clone
+from sklearn.pipeline import Pipeline
+
+# Use the same estimator that won earlier
+pipe_old, prep_old, est_old = unwrap_model(model_final)
+
+# Pick the matching preprocessor style based on the winner
+if any(key in winner_name for key in ["HGB", "RandomForest"]):
+    prep_fixed = preprocess_tree_fixed
+else:
+    prep_fixed = preprocess_fixed
+
+# Clone the fitted estimator so we can refit cleanly with the fixed preprocessor
+pipe_explain = Pipeline([
+    ("prep", prep_fixed),
+    ("clf", clone(est_old)),
+])
+
+# Fit on the same training data
+pipe_explain.fit(X_train, y_train)
+
+# From here on, use `pipe_explain` for feature names, importances, PDPs, and local explanations
+pipe, prep, est = unwrap_model(pipe_explain)
+
+print("Explain pipeline ready:", type(est).__name__, "with preprocessor:", type(prep).__name__)
+
+# after building & fitting pipe_explain ...
+model_final = pipe_explain          # <— use the fixed preprocessor going forward
+pipe, prep, est = unwrap_model(model_final)
+
+# sanity check
+print(prep)  # should show FunctionTransformer(..., feature_names_out='one-to-one')
+
+
+
+```
+
+```{python}
+# --- Global Feature Importance (coef_, feature_importances_, or permutation) ---
+
+pipe, prep, est = unwrap_model(model_final)
+
+feat_names_out = get_out_feature_names(prep, X_train.columns)
+
+native_importances = None
+kind = None
+
+if hasattr(est, "coef_"):
+    coefs = np.ravel(est.coef_)
+    native_importances = np.abs(coefs)
+    kind = "abs(coef_)"
+elif hasattr(est, "feature_importances_"):
+    native_importances = np.ravel(est.feature_importances_)
+    kind = "feature_importances_"
+
+if native_importances is None:
+    X_tr, X_va, y_tr, y_va = train_test_split(
+        X_train, y_train, test_size=0.20, stratify=y_train, random_state=123
+    )
+    pipe.fit(X_tr, y_tr)
+    r = permutation_importance(
+        pipe, X_va, y_va, n_repeats=10, random_state=42, scoring="roc_auc"
+    )
+    native_importances = r.importances_mean
+    kind = "permutation (ROC AUC)"
+
+grp = {}
+for name, val in zip(feat_names_out, native_importances):
+    parent = original_parent(name)
+    grp[parent] = grp.get(parent, 0.0) + float(val)
+
+imp_df = (
+    pd.DataFrame({"feature": list(grp.keys()), "importance": list(grp.values())})
+    .sort_values("importance", ascending=False)
+    .reset_index(drop=True)
+)
+
+top_k = 20
+top_imp = imp_df.head(top_k)
+
+plt.figure(figsize=(7, 8))
+plt.barh(top_imp["feature"][::-1], top_imp["importance"][::-1])
+plt.xlabel(f"Importance ({kind})")
+plt.title(f"Global Feature Importance — {winner_name}")
+plt.tight_layout()
+plt.savefig("feature_importance_global.png", dpi=200)
+plt.show()
+
+display(imp_df.head(30))
+
+
+```
+```{python}
+# --- Partial Dependence (PDP) for key numeric features ---
+
+pdp_features = [
+    c
+    for c in [
+        "age_years",
+        "bmi_from_selfreport",
+        "sedentary_minutes",
+        "sleep_hours_weekdays",
+        "drinks_per_day_12mo",
+    ]
+    if c in X.columns
+]
+
+if len(pdp_features) == 0:
+    print("No PDP features found in the current dataset.")
+else:
+    if not hasattr(pipe, "classes_"):
+        pipe.fit(X_train, y_train)
+
+    for feat in pdp_features:
+        fig = plt.figure(figsize=(5, 4))
+        try:
+            PartialDependenceDisplay.from_estimator(
+                pipe, X_test, [feat], kind="average", grid_resolution=30
+            )
+            plt.title(f"Partial Dependence: {feat} — {winner_name}")
+            plt.tight_layout()
+            out = f"pdp_{feat}.png"
+            plt.savefig(out, dpi=200)
+            plt.show()
+        except Exception as e:
+            plt.close(fig)
+            print(f"PDP failed for {feat}: {e}")
+
+
+```
+```{python}
+# --- Observation-specific explanations: linear contribution bars ---
+
+def is_linear(estimator):
+    return hasattr(estimator, "coef_") and estimator.__class__.__name__.lower().startswith(
+        "logistic"
+    )
+
+
+def per_observation_contributions_linear(pipe, prep, est, X_rows, group_top=12):
+    """
+    Returns a list of DataFrames, one per observation in X_rows,
+    with grouped contributions sorted by absolute magnitude (log-odds space).
+    """
+    Z = prep.transform(X_rows)
+
+    if hasattr(est, "coef_"):
+        beta = np.ravel(est.coef_)
+        _ = float(est.intercept_) if hasattr(est, "intercept_") else 0.0
+    else:
+        raise ValueError("Estimator does not expose coef_.")
+
+    feat_names = get_out_feature_names(prep, X_rows.columns)
+
+    group_idx = {}
+    for j, name in enumerate(feat_names):
+        parent = original_parent(name)
+        group_idx.setdefault(parent, []).append(j)
+
+    results = []
+    for i in range(Z.shape[0]):
+        z = Z[i, :]
+        contrib_j = beta * z
+        grp_vals = []
+        for g, idxs in group_idx.items():
+            val = float(np.sum(contrib_j[idxs]))
+            grp_vals.append((g, val, abs(val)))
+        dfc = (
+            pd.DataFrame(
+                grp_vals, columns=["feature", "contribution", "abs_contribution"]
+            )
+            .sort_values("abs_contribution", ascending=False)
+            .head(group_top)
+            .reset_index(drop=True)
+        )
+        results.append(dfc.drop(columns=["abs_contribution"]))
+    return results
+
+
+pipe, prep, est = unwrap_model(model_final)
+p_test_series = pd.Series(p_test, index=X_test.index)
+
+idx_max = p_test_series.idxmax()
+idx_random_pos = (
+    y_test[y_test == 1].sample(1, random_state=7).index[0]
+    if (y_test == 1).any()
+    else X_test.index[0]
+)
+idx_random_neg = (
+    y_test[y_test == 0].sample(1, random_state=9).index[0]
+    if (y_test == 0).any()
+    else X_test.index[0]
+)
+
+rows_to_explain = [idx_max, idx_random_pos, idx_random_neg]
+labels = ["max_prob", "random_positive", "random_negative"]
+
+if is_linear(est):
+    X_rows = X_test.loc[rows_to_explain]
+    contribs = per_observation_contributions_linear(
+        pipe, prep, est, X_rows, group_top=12
+    )
+
+    for tag, idx, dfc in zip(labels, rows_to_explain, contribs):
+        plt.figure(figsize=(7, 4.5))
+        plt.barh(dfc["feature"][::-1], dfc["contribution"][::-1])
+        plt.axvline(0, linestyle="--", linewidth=1)
+        plt.title(
+            f"Per-Observation Contributions (log-odds)\n{winner_name} — idx={idx} ({tag})"
+        )
+        plt.xlabel("Contribution to log-odds of class 1")
+        plt.tight_layout()
+        out = f"explain_{tag}_{idx}.png"
+        plt.savefig(out, dpi=200)
+        plt.show()
+
+        display(dfc)
+else:
+    print("Final estimator is not linear; use the leave-one-group-out explanation below.")
+
+
+```
+
+
+```{python}
+# --- Observation-specific explanations: model-agnostic leave-one-group-out ---
+
+def group_columns(prep, X_frame):
+    names = get_out_feature_names(prep, X_frame.columns)
+    groups = {}
+    for j, nm in enumerate(names):
+        g = original_parent(nm)
+        groups.setdefault(g, []).append(j)
+    return names, groups
+
+
+def mask_group_rows(prep, X_rows, groups, group_name):
+    """
+    Returns a copy of transformed rows where all transformed columns belonging to
+    'group_name' are set to 0 after preprocessing.
+    """
+    Z = prep.transform(X_rows)
+    Z_masked = Z.copy()
+    idxs = groups.get(group_name, [])
+    if len(idxs):
+        Z_masked[:, idxs] = 0.0
+    return Z_masked
+
+
+def predict_proba_from_transformed(pipe, Z):
+    """
+    Given a fitted Pipeline (prep+clf) and a precomputed transformed matrix Z,
+    run only the classifier on Z.
+    """
+    est = pipe.named_steps["clf"]
+    return est.predict_proba(Z)[:, 1]
+
+
+def explain_observation_leave_one_group_out(pipe, prep, X_row, top=10):
+    """
+    For a single-row DataFrame X_row, compute probability deltas by zeroing each group.
+    Positive delta => group increased the probability; negative => decreased it.
+    """
+    names_out, groups = group_columns(prep, X_row)
+    base_p = pipe.predict_proba(X_row)[0, 1]
+    deltas = []
+    for g in groups.keys():
+        Z_masked = mask_group_rows(prep, X_row, groups, g)
+        p_masked = predict_proba_from_transformed(pipe, Z_masked)[0]
+        deltas.append((g, base_p - p_masked, abs(base_p - p_masked)))
+    df = (
+        pd.DataFrame(deltas, columns=["feature", "delta_prob", "abs_delta"])
+        .sort_values("abs_delta", ascending=False)
+        .head(top)[["feature", "delta_prob"]]
+        .reset_index(drop=True)
+    )
+    return base_p, df
+
+
+examples = [idx_max, idx_random_pos, idx_random_neg]
+for tag, idx in zip(labels, examples):
+    X1 = X_test.loc[[idx]]
+    base_p, dfexp = explain_observation_leave_one_group_out(
+        pipe, prep, X1, top=12
+    )
+
+    plt.figure(figsize=(7, 4.5))
+    plt.barh(dfexp["feature"][::-1], dfexp["delta_prob"][::-1])
+    plt.axvline(0, linestyle="--", linewidth=1)
+    plt.title(
+        f"Leave-One-Group-Out Δprob (base p={base_p:.3f})\n{winner_name} — idx={idx} ({tag})"
+    )
+    plt.xlabel("Change in predicted probability when group is masked")
+    plt.tight_layout()
+    out = f"explain_l1g_{tag}_{idx}.png"
+    plt.savefig(out, dpi=200)
+    plt.show()
+
+    display(dfexp)
+
+```
+
+```{python}
 
 ```
