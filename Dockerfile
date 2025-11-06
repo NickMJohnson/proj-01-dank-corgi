@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir --upgrade -r /vetiver/requirements.txt
 COPY app.py /vetiver/app/app.py
 COPY service-auth.json /vetiver/app/service-auth.json
 ENV GOOGLE_APPLICATION_CREDENTIALS="/vetiver/app/service-auth.json"
+
 # expose port
 EXPOSE 2222
 
