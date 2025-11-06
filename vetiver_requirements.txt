@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=vetiver_requirements.txt /tmp/tmpo5jreshd.in
 #
+gcsfs==2025.10.0
+
 annotated-doc==0.0.3
     # via fastapi
 annotated-types==0.7.0
@@ -158,3 +160,6 @@ zipp==3.23.0
 # The following packages are considered to be unsafe in a requirements file:
 # pip
 # setuptools
+
+
+
