@@ -232,6 +232,7 @@ print(proto.dtypes)
 
 ```{python}
 import os, gcsfs, pins
+
 SA_KEY = "/home/ji92/proj-01-dank-corgi/service-auth.json"
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = SA_KEY
 gcsfs.GCSFileSystem.clear_instance_cache()
@@ -240,15 +241,12 @@ board = pins.board_gcs("info-4940-models/ji92/", allow_pickle_read=True)
 
 v = VetiverModel(
     model=model,
-    model_name="prediabetes-model-3",   # ✅ same name you’ll use in prepare_docker
+    model_name="prediabetes-model-3",  # ✅ same name you’ll use in prepare_docker
     prototype_data=proto,
-    description="Logistic regression model predicting prediabetes from NHANES survey data."
+    description="Logistic regression model predicting prediabetes from NHANES survey data.",
 )
 
-vetiver_pin_write(board, v)
-
-```
-```{python}
+vetiver_pin_write(board, v)```{python}
 import vetiver
 from vetiver import VetiverModel, vetiver_pin_write
 
@@ -291,46 +289,58 @@ import pandas as pd
 import requests
 import json
 
-# --- API endpoint ---
-API_URL = "http://appliedml.infosci.cornell.edu:2222/predict"  # replace with your actual port if different
+API_URL = "http://appliedml.infosci.cornell.edu:2222/predict"
 
-# --- Load held-out test data ---
+# --- Load and clean data ---
 df = pd.read_csv("data-raw/nhanes2123_surveyonly_clean.csv")
 
-# Drop the target column if present
-target_col = "prediabetes_flag"
-if target_col in df.columns:
-    df = df.drop(columns=[target_col])
+if "prediabetes_flag" in df.columns:
+    df = df.drop(columns=["prediabetes_flag"])
 
-# --- Clean it the same way as your prototype ---
-# Ensures API input matches the schema
-df = df.fillna("Unknown").astype(str)
+# clean schema to match prototype
+for col in df.columns:
+    if df[col].dtype in ["float64", "int64"]:
+        df[col] = df[col].fillna(0)
+    else:
+        df[col] = df[col].fillna("Unknown").astype(str)
 
-# --- Take a few random rows to test ---
+# --- Pick random rows ---
 sample_rows = df.sample(5, random_state=42).to_dict(orient="records")
 
-print(f"📤 Sending {len(sample_rows)} rows to API...\n")
+print(f"Sending {len(sample_rows)} rows to API...\n")
 
-# --- Send request to the API ---
+# --- POST to API ---
 response = requests.post(
     API_URL,
     headers={"Content-Type": "application/json"},
     data=json.dumps(sample_rows)
 )
 
-# --- Check response ---
+# --- Handle response ---
 if response.status_code == 200:
     preds = response.json()
-    print("✅ API response received successfully!\n")
-   
-    # Loop through inputs and predictions
-    for i, (inp, outp) in enumerate(zip(sample_rows, preds)):
-        print(f"Row {i+1}:")
-        print(f"  Age: {inp['age_years']}, Sex: {inp['sex']}, BMI: {inp['bmi_from_selfreport']}")
-        print(f"  ➤ Predicted class: {outp.get('predicted')} | Probability: {outp.get('pred_proba'):.3f}\n")
+    print("✅ Success! Raw API response:\n", preds, "\n")
+
+    # --- Detect response type automatically ---
+    if isinstance(preds, list) and all(isinstance(p, dict) for p in preds):
+        # Standard vetiver JSON format (list of dicts)
+        for i, (inp, outp) in enumerate(zip(sample_rows, preds)):
+            print(f"Row {i+1}:")
+            print(f"  Input: age={inp['age_years']}, sex={inp['sex']}, BMI={inp['bmi_from_selfreport']}")
+            print(f"  ➤ Predicted: {outp.get('predicted')} | Probability: {outp.get('pred_proba', 0):.3f}\n")
+
+    elif isinstance(preds, list):
+        # Simple list of predictions
+        for i, (inp, pred) in enumerate(zip(sample_rows, preds)):
+            print(f"Row {i+1}:")
+            print(f"  Input: age={inp['age_years']}, sex={inp['sex']}, BMI={inp['bmi_from_selfreport']}")
+            print(f"  ➤ Predicted: {pred}\n")
+
+    else:
+        print("⚠️ Unexpected format:", type(preds))
 
 else:
-    print(f"❌ API error {response.status_code}")
+    print(f"❌ API Error {response.status_code}")
     print(response.text)
 ```
 
