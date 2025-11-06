@@ -15,3 +15,4 @@ v = VetiverModel.from_pin(b, 'prediabetes-model-2', version = '20251106T182318Z-
 
 vetiver_api = vetiver.VetiverAPI(v)
 api = vetiver_api.app
+

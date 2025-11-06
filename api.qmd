@@ -189,7 +189,16 @@ X_train, X_test, y_train, y_test = train_test_split(
 model.fit(X_train, y_train)
 print("✅ Model trained successfully!")
 
-proto = X.head(2).fillna("Unknown").astype(str)
+proto = X.head(2).copy()
+
+# fill NaN properly for all columns before pinning
+for col in proto.columns:
+    if proto[col].dtype in ["float64", "int64"]:
+        proto[col] = proto[col].fillna(0)
+    else:
+        proto[col] = proto[col].fillna("Unknown").astype(str)
+
+print("✅ Prototype schema prepared:")
 print(proto.dtypes)
 
 # --- Evaluate ---
@@ -231,7 +240,7 @@ board = pins.board_gcs("info-4940-models/ji92/", allow_pickle_read=True)
 
 v = VetiverModel(
     model=model,
-    model_name="prediabetes-model-2",   # ✅ same name you’ll use in prepare_docker
+    model_name="prediabetes-model-3",   # ✅ same name you’ll use in prepare_docker
     prototype_data=proto,
     description="Logistic regression model predicting prediabetes from NHANES survey data."
 )
@@ -279,32 +288,54 @@ print(board.pin_list())
 # testing
 ```{python}
 import pandas as pd
-import requests, json
+import requests
+import json
 
-API_URL = "http://appliedml.infosci.cornell.edu:2222/predict"
+# --- API endpoint ---
+API_URL = "http://appliedml.infosci.cornell.edu:2222/predict"  # replace with your actual port if different
 
-# Load test data (raw survey format)
+# --- Load held-out test data ---
 df = pd.read_csv("data-raw/nhanes2123_surveyonly_clean.csv")
-if "prediabetes_flag" in df.columns:
-    df = df.drop(columns=["prediabetes_flag"])
 
-# Clean it to match schema expectations
-payload = (
-    df.sample(5, random_state=42)
-      .fillna("Unknown")      # replace NaN
-      .astype(str)            # ensure strings everywhere
-      .to_dict(orient="records")
+# Drop the target column if present
+target_col = "prediabetes_flag"
+if target_col in df.columns:
+    df = df.drop(columns=[target_col])
+
+# --- Clean it the same way as your prototype ---
+# Ensures API input matches the schema
+df = df.fillna("Unknown").astype(str)
+
+# --- Take a few random rows to test ---
+sample_rows = df.sample(5, random_state=42).to_dict(orient="records")
+
+print(f"📤 Sending {len(sample_rows)} rows to API...\n")
+
+# --- Send request to the API ---
+response = requests.post(
+    API_URL,
+    headers={"Content-Type": "application/json"},
+    data=json.dumps(sample_rows)
 )
 
-# Send request
-print(f"Sending {len(payload)} rows to API...")
-response = requests.post(API_URL, headers={"Content-Type": "application/json"}, data=json.dumps(payload))
-
-# Print results
+# --- Check response ---
 if response.status_code == 200:
-    print("✅ Success!")
-    print(json.dumps(response.json(), indent=2))
+    preds = response.json()
+    print("✅ API response received successfully!\n")
+   
+    # Loop through inputs and predictions
+    for i, (inp, outp) in enumerate(zip(sample_rows, preds)):
+        print(f"Row {i+1}:")
+        print(f"  Age: {inp['age_years']}, Sex: {inp['sex']}, BMI: {inp['bmi_from_selfreport']}")
+        print(f"  ➤ Predicted class: {outp.get('predicted')} | Probability: {outp.get('pred_proba'):.3f}\n")
+
 else:
-    print(f"❌ Error {response.status_code}")
+    print(f"❌ API error {response.status_code}")
     print(response.text)
+```
+
+
+```{python}
+print(response.status_code)
+print(response.text)
 ```
