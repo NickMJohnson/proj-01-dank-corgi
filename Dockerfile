@@ -11,6 +11,9 @@ COPY vetiver_requirements.txt /vetiver/requirements.txt
 #
 RUN pip install --no-cache-dir --upgrade -r /vetiver/requirements.txt
 
+# enforce gcsfs installment 
+RUN pip install --no-cache-dir gcsfs==2025.10.0
+
 # copy app file
 COPY app.py /vetiver/app/app.py
 COPY service-auth.json /vetiver/app/service-auth.json
