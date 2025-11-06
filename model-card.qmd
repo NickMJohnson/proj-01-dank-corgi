@@ -433,7 +433,7 @@ model.fit(X, y)
 
 # --- Vetiver wrap & pin ---
 from vetiver import VetiverModel, vetiver_pin_write
-proto = X.head(2)               # <-- define proto before using
+proto = X.head(2)               
 v = VetiverModel(
     model=model,
     model_name="nhanes-prediabetes-py",
@@ -441,9 +441,29 @@ v = VetiverModel(
     metadata={"user": {"columns": list(X.columns)}}
 )
 
-vetiver_pin_write(board, v)     # may say "hash not changed" if same model/metadata
+vetiver_pin_write(board, v)    
 
 print(board.pin_list())
+
+## test api 
+import requests
+import pandas as pd
+import time
+
+API = "http://localhost:3258"
+
+# Wait for container to boot
+
+# Prepare one test observation (must match your model features)
+df = pd.read_csv("data-raw/nhanes2123_prediabetes_features_labeled_clean.csv")
+X = df.drop(columns=["prediabetes_flag"]).fillna(0)
+sample = X.iloc[[0]]
+
+# Send to API for prediction
+resp = requests.post(f"{API}/predict", json={"data": sample.to_dict(orient="records")})
+
+print("Status:", resp.status_code)
+print("Response:", resp.text)
 
 
 ```

@@ -12,7 +12,9 @@ COPY vetiver_requirements.txt /vetiver/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /vetiver/requirements.txt
 
 # enforce gcsfs installment 
-RUN pip install --no-cache-dir gcsfs==2025.10.0
+RUN pip install --no-cache-dir gcsfs fsspec==2025.7.0
+
+RUN python -m pip install --upgrade gcsfs
 
 # copy app file
 COPY app.py /vetiver/app/app.py

@@ -4,7 +4,8 @@
 #
 #    pip-compile --output-file=vetiver_requirements.txt /tmp/tmpo5jreshd.in
 #
-gcsfs==2025.10.0
+
+gcsfs
 
 annotated-doc==0.0.3
     # via fastapi
