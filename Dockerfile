@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir gcsfs fsspec==2025.7.0
 RUN python -m pip install --upgrade gcsfs
 
 # copy app file
-COPY app.py /vetiver/app/app.py
+COPY app.py /vetiver/app.py
 COPY service-auth.json /vetiver/app/service-auth.json
 ENV GOOGLE_APPLICATION_CREDENTIALS="/vetiver/app/service-auth.json"
 
