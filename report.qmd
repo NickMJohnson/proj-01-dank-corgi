@@ -285,7 +285,7 @@ Feature creation focused on aligning predictors with **realistic screening conte
 
 -   **PR AUC (class-focused):** Given the \~42% prevalence of class 1, PR AUC summarizes the precision–recall trade-off for the positive class, highlighting how many false positives occur at higher sensitivity levels.
 
-# Initial Results
+# Model Comparison
 
 **Null model (majority class, CV)** - Accuracy **0.577**, ROC AUC **0.500**, PR AUC **0.423**, Brier **0.423**. This establishes a lower bound and shows that naive majority-class guessing provides no discrimination. A model that predicts all respondents as “not prediabetic” achieves roughly 58% accuracy due to class imbalance but fails to distinguish between healthy and at-risk individuals, underscoring the importance of informative features for screening.
 
@@ -303,6 +303,8 @@ Feature creation focused on aligning predictors with **realistic screening conte
 The cross-validation results show that the regularized logistic regression models consistently outperform tree-based methods across all metrics. The **L2 logistic regression** achieves the best overall balance between discrimination (ROC AUC ≈ 0.71) and calibration (Brier ≈ 0.21), indicating stable, interpretable predictions with well-calibrated probabilities compared to the more variable ensemble models.
 
 **Winner:** **LogReg L2 (LR-CV)** by ROC AUC and Brier.
+
+# Model Evaluation
 
 ## Test set (held-out)
 
@@ -374,3 +376,73 @@ The calibration plot shows that predicted probabilities align closely with obser
 The model’s predicted probabilities are reasonably accurate — the Brier score (≈ 0.21) indicates that the probabilities align well with actual outcomes. This means that when the model predicts a 70% chance of prediabetes, that estimate tends to reflect real-world likelihood fairly closely.
 
 Together, these curves show that the model achieves a strong balance between discrimination, reliability, and practical screening utility. The ROC and PR curves confirm that the model effectively ranks and identifies individuals at metabolic risk, even in a moderately imbalanced dataset. The calibration plot and Brier score suggest its probability estimates are trustworthy enough for real-world use, meaning the model could reasonably support survey-based prediabetes screening and referral decisions in public health settings.
+
+## Model Interpretation
+
+**1. Global Importance**\
+![Feature Importance](feature_importance_global.png){width="65%"}
+
+Global importance.
+The grouped feature importance shows medical history and demographics dominate risk:
+ever_high_bp , race/ethnicity, age, BMI, then sex and weight-history indicators.
+
+**2. Partial Dependence**\
+![Partial Dependence Plot Age](pdp_age_years.png){width="45%"}
+![Partial Dependence Plot BMI](pdp_bmi_from_selfreport.png){width="45%"}
+
+Age and BMI show monotone increases in predicted probability — expected in metabolic risk.
+
+![Partial Dependence Plot Sedentary Minutes](pdp_sedentary_minutes.png){width="45%"}
+![Partial Dependence Plot Sleep Drinke Per Day](pdp_drinks_per_day_12mo.png){width="45%"}
+
+Sedentary minutes and drinks/day show mild negative slopes in this linear model — likely reflecting residual confounding (e.g., higher sedentary time or drinking correlating with younger age / lower BMI in our sample) + the model’s linear form (cannot model U/J shapes).
+
+**3. Observation-specific explanations**\
+We provide two complementary views:
+
+![Explain Max Probability](explain_max_prob_3347.png){width="45%"}
+![Explain Random Positive](explain_random_positive_1585.png){width="45%"}
+![Explain Random Negative](explain_random_negative_2137.png){width="45%"}
+
+Log-odds contributions: for high-risk and typical cases, BMI and age contribute the most positive log-odds; some demographics reduce risk.
+
+![Explain Max Probability](explain_l1g_max_prob_3347.png){width="45%"}
+![Explain Random Positive](explain_l1g_random_positive_1585.png){width="45%"}
+![Explain Random Negative](explain_l1g_random_negative_2137.png){width="45%"}
+
+Leave-one-group-out Δprob: masking BMI or age produces the largest probability drops in high-risk individuals, confirming reliance on these features.
+
+**3. Fairness/consistency spot-check**\
+
+Group metrics at the chosen threshold show high recall across groups with precision varying somewhat by sex and race/ethnicity (consistent with differing prevalence). This supports the screening aim but suggests monitoring precision disparities.
+
+
+# Recommendations
+
+
+This model demonstrates how non-clinical, survey-based data can estimate prediabetes likelihood using accessible health and behavioral variables. It provides a proof-of-concept for population screening and educational use, showing that age, BMI, and cardiometabolic history capture much of the risk signal without clinical laboratory data. 
+
+
+## Intended Use
+
+- The intended use of this model is as a survey-based pre-screening tool to flag individuals who may benefit from confirmatory glucose or HbA1c testing. At this stage, its intended to be used to aid in the decision making process, not as a stand-alone decision making tool.
+- Apply the recall-optimized threshold (~0.38) to capture most likely cases while maintaining moderate precision; health programs with limited lab capacity may raise the threshold to reduce false positives.  
+- The model is suitable for research, education, and policy planning, not for individual medical decision-making or diagnosis.
+
+## Limitations
+
+- Predictions are associational, not causal. The model describes relationships in population data and should not be used to infer direct cause-and-effect.  
+- Self-report bias in survey responses (e.g., sleep, sedentary time, alcohol use) can make estimates less accurate.  
+- Precision varies by subgroup (sex, race/ethnicity). These gaps align with prevalence differences but warrant monitoring to prevent systematic disparities.  
+- The model is trained on cross-sectional NHANES 2021–2023 data; its calibration and performance may drift as health behaviors, population composition, or measurement protocols change.
+
+## Improvements Informed by Results
+1. **Expand Data-Set:** Train model over multiple survey cycles and include more survey features that are consistant throughout cycles. 
+2. **Calibration:** Maintain probability reliability through periodic recalibration (e.g., Platt or isotonic scaling), especially when applied to future NHANES cycles.  
+3. **Fairness Audit:** Regularly assess subgroup performance (e.g., race, sex, socioeconomic status) and consider group-specific thresholds or post-hoc calibration if precision gaps persist.
+4. **External Validation:** Re-evaluate on future NHANES waves or community health surveys to confirm generalizability across populations and time periods.  
+5. **Public Health Integration:** Combine model predictions with demographic weighting to estimate regional or national prediabetes risk prevalence, aiding public-health surveillance and early-intervention planning.
+
+## Summary
+
+Overall, this model highlights the potential of public survey data to support early detection and outreach around prediabetes.  While not intended for clinical decision-making, it demonstrates that simple, transparent methods can meaningfully stratify population risk using accessible information. Future iterations that refine calibration, test fairness, and validate performance across new NHANES cycles could turn this research prototype into a dependable screening aid for community and public-health programs. By balancing interpretability, recall, and ethical safeguards, the model serves as a foundation for responsible, data-driven approaches to preventive health.
