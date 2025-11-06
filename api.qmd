@@ -189,6 +189,9 @@ X_train, X_test, y_train, y_test = train_test_split(
 model.fit(X_train, y_train)
 print("✅ Model trained successfully!")
 
+proto = X.head(2).fillna("Unknown").astype(str)
+print(proto.dtypes)
+
 # --- Evaluate ---
 # p_test = model.predict_proba(X_test)[:, 1]
 # y_pred = (p_test >= 0.5).astype(int)
@@ -229,7 +232,7 @@ board = pins.board_gcs("info-4940-models/ji92/", allow_pickle_read=True)
 v = VetiverModel(
     model=model,
     model_name="prediabetes-model-1",   # ✅ same name you’ll use in prepare_docker
-    prototype_data=X.head(2),
+    prototype_data=proto,
     description="Logistic regression model predicting prediabetes from NHANES survey data."
 )
 
@@ -270,4 +273,38 @@ board = pins.board_gcs("info-4940-models/zwd3/", allow_pickle_read=True)
 print("✅ Connected! Your available pins:")
 print(board.pin_list())
 
+```
+
+
+# testing
+```{python}
+import pandas as pd
+import requests, json
+
+API_URL = "http://appliedml.infosci.cornell.edu:2222/predict"
+
+# Load test data (raw survey format)
+df = pd.read_csv("data-raw/nhanes2123_surveyonly_clean.csv")
+if "prediabetes_flag" in df.columns:
+    df = df.drop(columns=["prediabetes_flag"])
+
+# Clean it to match schema expectations
+payload = (
+    df.sample(5, random_state=42)
+      .fillna("Unknown")      # replace NaN
+      .astype(str)            # ensure strings everywhere
+      .to_dict(orient="records")
+)
+
+# Send request
+print(f"Sending {len(payload)} rows to API...")
+response = requests.post(API_URL, headers={"Content-Type": "application/json"}, data=json.dumps(payload))
+
+# Print results
+if response.status_code == 200:
+    print("✅ Success!")
+    print(json.dumps(response.json(), indent=2))
+else:
+    print(f"❌ Error {response.status_code}")
+    print(response.text)
 ```
