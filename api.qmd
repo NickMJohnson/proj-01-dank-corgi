@@ -88,7 +88,7 @@ proto = X.head(2)
 v = VetiverModel(
     model=model,
     model_name="nhanes-prediabetes-new",
-    prototype_data=proto,
+    prototype_data=X.head(2),
     metadata={"user": {"columns": list(X.columns)}},
 )
 
@@ -102,25 +102,42 @@ board.pin_versions("nhanes-prediabetes-new")
 
 ```{python}
 import pandas as pd
-import requests
+import vetiver
+from vetiver.server import prototype, predict, ping
 
-# --- API endpoint (replace port if changed) ---
-API = "http://appliedml.infosci.cornell.edu:3258"
+# 1) Inspect the server's expected schema
+endpoint = vetiver.vetiver_endpoint("http://appliedml.infosci.cornell.edu:3258")
+schema = vetiver.prototype(endpoint)   # dict with JSON schema
+expected = list(schema["properties"].keys())
 
-# --- Load the same cleaned dataset used for training ---
-TEST_PATH = "data-raw/nhanes2123_surveyonly_clean.csv"
-df = pd.read_csv(TEST_PATH)
+# 2) Start from your data
+df = pd.read_csv("data-raw/nhanes2123_surveyonly_clean.csv")
+X = df.drop(columns=["prediabetes_flag"]).copy()
 
-# --- Prepare a single test sample (matches schema exactly) ---
-X = df.drop(columns=["prediabetes_flag"])
-sample = X.iloc[[0]]  # first row
-payload = sample.to_dict(orient="records")
+# 3) Coerce NAs for numeric fields that are in your data but currently None
+for col in ["drinks_per_day_12mo", "regular_periods_12mo_ans",
+            "dpq_poor_appetite_ans", "dpq_feeling_down_ans"]:
+    if col in X.columns:
+        X[col] = pd.to_numeric(X[col], errors="coerce").fillna(0.0)
 
-# --- Send request to Vetiver API ---
-r = requests.post(f"{API}/predict", json=payload, timeout=10)
+# 4) Add any fields that the API requires but your dataset doesn’t have.
+#    Use safe defaults (0 for numeric, empty string for str) so validation passes.
+for col in expected:
+    if col not in X.columns:
+        # crude guess: try numeric, else fall back to string
+        X[col] = 0
 
-# --- Display results ---
-print("STATUS:", r.status_code)
-print("BODY:", r.text)
+# 5) Reorder to the exact schema order
+X_req = X.reindex(columns=expected)
+
+# 6) Send one row through Vetiver client
+resp = vetiver.predict(endpoint=endpoint, data=X_req.head(1))
+print(resp)
 ```
 
+
+```{python}
+import requests
+API = "http://appliedml.infosci.cornell.edu:3258"
+print(requests.get(f"{API}/meta").json())
+```
