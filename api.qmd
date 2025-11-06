@@ -9,106 +9,12 @@ execute:
 ---
 
 # API Deployment
-```{python}
 
-# # --- Auth & board setup ---
-# import os, gcsfs, pins
-# SA_KEY = "/home/ji92/proj-01-dank-corgi/service-auth.json"
-# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = SA_KEY
-# gcsfs.GCSFileSystem.clear_instance_cache()
-
-# board = pins.board_gcs(path="info-4940-models/ji92/", allow_pickle_read=True)
-
-# # --- Data ---
-# import pandas as pd
-# CSV_PATH = "data-raw/nhanes2123_surveyonly_clean.csv"
-# df = pd.read_csv(CSV_PATH)
-# target_col = "prediabetes_flag"
-
-# X = df.drop(columns=[target_col])
-# y = df[target_col]
-
-# # --- Preprocessing pipeline (same as notebook) ---
-# from sklearn.pipeline import Pipeline
-# from sklearn.preprocessing import StandardScaler, OneHotEncoder, FunctionTransformer
-# from sklearn.compose import ColumnTransformer
-# from sklearn.impute import SimpleImputer
-# from sklearn.linear_model import LogisticRegressionCV
-# from sklearn.model_selection import StratifiedKFold
-
-# RANDOM_STATE = 42
-# present_numeric = [
-#     "age_years", "bmi_from_selfreport", "weight_change_1y_lb",
-#     "sleep_hours_weekdays", "sedentary_minutes", "drinks_per_day_12mo",
-# ]
-# present_categorical = [
-#     "sex","race_eth","ever_smoker","current_smoker","ever_high_bp_ans",
-#     "ever_high_chol_ans","smoked_100_cigs_ans","smoke_now_ans",
-#     "tried_lose_weight_past_year_ans","regular_periods_12mo_ans",
-#     "dpq_poor_appetite_ans","ever_asthma_ans","anemia_treatment_3mo_ans",
-#     "ever_chf_ans","ever_heart_attack_ans","ever_stroke_ans",
-#     "ever_thyroid_problem_ans","ever_liver_condition_ans",
-# ]
-# def to_str_func(X):
-#     return X.astype(str)
-
-# num_pipe = Pipeline([
-#     ("imp", SimpleImputer(strategy="median", add_indicator=True)),
-#     ("sc", StandardScaler()),
-# ])
-# cat_pipe = Pipeline([
-#     ("imp", SimpleImputer(strategy="constant", fill_value="Unknown")),
-#     ("to_str", FunctionTransformer(to_str_func)),
-#     ("ohe", OneHotEncoder(handle_unknown="ignore", sparse_output=False, min_frequency=0.02)),
-# ])
-# preprocess = ColumnTransformer([
-#     ("num", num_pipe, present_numeric),
-#     ("cat", cat_pipe, present_categorical),
-# ])
-
-# # --- Model: L2 (ridge) Logistic Regression with CV ---
-# cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
-# model = Pipeline([
-#     ("prep", preprocess),
-#     ("clf", LogisticRegressionCV(
-#         Cs=[0.1, 1, 10],
-#         cv=cv,
-#         penalty="l2",
-#         solver="lbfgs",
-#         max_iter=3000,
-#         scoring="roc_auc",
-#         random_state=RANDOM_STATE,
-#     )),
-# ])
-# model.fit(X, y)
-
-# # --- Vetiver wrap & pin ---
-# from vetiver import VetiverModel, vetiver_pin_write
-# proto = X.head(2)
-# v = VetiverModel(
-#     model=model,
-#     model_name="nhanes-prediabetes-new",
-#     prototype_data=X.head(2),
-#     metadata={"user": {"columns": list(X.columns)}},
-# )
-
-# vetiver_pin_write(board, v)
-
-# print("✅ Model pinned successfully!")
-# print("Current pins:", board.pin_list())
-# # list versions for the new model
-# board.pin_versions("nhanes-prediabetes-new")
-# ```
-
-
-```
-
-# Starting From Scratch
 # Importating Data
 ```{python}
 import pandas as pd
 
-# Path to your cleaned dataset
+# path to cleaned dataset
 CSV_PATH = "data-raw/nhanes2123_surveyonly_clean.csv"
 df = pd.read_csv(CSV_PATH)
 
@@ -116,13 +22,13 @@ target_col = "prediabetes_flag"
 X = df.drop(columns=[target_col])
 y = df[target_col]
 
-print("✅ Data loaded:", X.shape)
+print("Data loaded:", X.shape)
 print("Columns:", list(X.columns))
 
 ```
 
 
-# training model and metrics
+# Training the model 
 ```{python}
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, FunctionTransformer
@@ -132,7 +38,7 @@ from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.metrics import roc_auc_score, accuracy_score, classification_report
 
-# --- Fix the column lists based on your df ---
+# fix the column lists based on df
 numeric_cols = [
     "age_years", "sleep_hours_weekdays", "sedentary_minutes",
     "drinks_per_day_12mo", "bmi_from_selfreport", "weight_change_1y_lb"
@@ -147,7 +53,7 @@ categorical_cols = [
     'ever_high_bp_ans', 'ever_high_chol_ans', 'ever_smoker', 'current_smoker'
 ]
 
-# --- Define preprocessing ---
+# define preprocessing 
 def to_str_func(X):
     return X.astype(str)
 
@@ -166,7 +72,7 @@ preprocess = ColumnTransformer([
     ("cat", cat_pipe, categorical_cols)
 ])
 
-# --- Model ---
+# model 
 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 model = Pipeline([
     ("prep", preprocess),
@@ -181,13 +87,13 @@ model = Pipeline([
     ))
 ])
 
-# --- Split and train ---
+# split and train
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42
 )
 
 model.fit(X_train, y_train)
-print("✅ Model trained successfully!")
+print("Model trained successfully")
 
 proto = X.head(2).copy()
 
@@ -198,38 +104,13 @@ for col in proto.columns:
     else:
         proto[col] = proto[col].fillna("Unknown").astype(str)
 
-print("✅ Prototype schema prepared:")
+print("Prototype schema prepared:")
 print(proto.dtypes)
 
-# --- Evaluate ---
-# p_test = model.predict_proba(X_test)[:, 1]
-# y_pred = (p_test >= 0.5).astype(int)
-
-# print("ROC-AUC:", roc_auc_score(y_test, p_test))
-# print("Accuracy:", accuracy_score(y_test, y_pred))
-# print("\nClassification Report:\n", classification_report(y_test, y_pred))
-
 ```
 
-# manual predictions
-```{python}
-# # pick any row
-# sample = X_test.iloc[[0]]
 
-# print("Sample input:\n")
-# display(sample)
-
-# # model outputs a probability of prediabetes (class 1)
-# prob = model.predict_proba(sample)[0, 1]
-# pred = int(prob >= 0.5)
-
-# print(f"Predicted probability: {prob:.3f}")
-# print(f"Predicted class: {pred} (1 = prediabetic, 0 = not)")
-
-```
-
-# Make docker file
-
+# Make Docker File
 ```{python}
 import os, gcsfs, pins
 
@@ -241,7 +122,7 @@ board = pins.board_gcs("info-4940-models/ji92/", allow_pickle_read=True)
 
 v = VetiverModel(
     model=model,
-    model_name="prediabetes-model-3",  # ✅ same name you’ll use in prepare_docker
+    model_name="prediabetes-model-3", 
     prototype_data=proto,
     description="Logistic regression model predicting prediabetes from NHANES survey data.",
 )
@@ -263,27 +144,7 @@ vetiver.prepare_docker(
 ```
 
 
-```{python}
-# --- STEP 1: Auth setup ---
-import os, gcsfs, pins
-
-# point to your service account JSON
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/zwd3/proj-01-dank-corgi/service-auth.json"
-
-# clear any old gcsfs sessions
-gcsfs.GCSFileSystem.clear_instance_cache()
-
-# --- STEP 2: Connect to your subfolder on the class bucket ---
-board = pins.board_gcs("info-4940-models/zwd3/", allow_pickle_read=True)
-
-# --- STEP 3: Test that authentication works ---
-print("✅ Connected! Your available pins:")
-print(board.pin_list())
-
-```
-
-
-# testing
+# Testing
 ```{python}
 import pandas as pd
 import requests
@@ -291,7 +152,7 @@ import json
 
 API_URL = "http://appliedml.infosci.cornell.edu:2222/predict"
 
-# --- Load and clean data ---
+# load and clean data
 df = pd.read_csv("data-raw/nhanes2123_surveyonly_clean.csv")
 
 if "prediabetes_flag" in df.columns:
@@ -304,48 +165,42 @@ for col in df.columns:
     else:
         df[col] = df[col].fillna("Unknown").astype(str)
 
-# --- Pick random rows ---
+# pick random rows 
 sample_rows = df.sample(5, random_state=42).to_dict(orient="records")
 
 print(f"Sending {len(sample_rows)} rows to API...\n")
 
-# --- POST to API ---
+# POST to API 
 response = requests.post(
     API_URL,
     headers={"Content-Type": "application/json"},
     data=json.dumps(sample_rows)
 )
 
-# --- Handle response ---
+# handle response
 if response.status_code == 200:
     preds = response.json()
-    print("✅ Success! Raw API response:\n", preds, "\n")
+    print("Success. Raw API response:\n", preds, "\n")
 
-    # --- Detect response type automatically ---
+    # detect response type automatically 
     if isinstance(preds, list) and all(isinstance(p, dict) for p in preds):
-        # Standard vetiver JSON format (list of dicts)
+        # standard vetiver JSON format (list of dicts)
         for i, (inp, outp) in enumerate(zip(sample_rows, preds)):
             print(f"Row {i+1}:")
             print(f"  Input: age={inp['age_years']}, sex={inp['sex']}, BMI={inp['bmi_from_selfreport']}")
-            print(f"  ➤ Predicted: {outp.get('predicted')} | Probability: {outp.get('pred_proba', 0):.3f}\n")
+            print(f"  Predicted: {outp.get('predicted')} | Probability: {outp.get('pred_proba', 0):.3f}\n")
 
     elif isinstance(preds, list):
-        # Simple list of predictions
+        # simple list of predictions
         for i, (inp, pred) in enumerate(zip(sample_rows, preds)):
             print(f"Row {i+1}:")
             print(f"  Input: age={inp['age_years']}, sex={inp['sex']}, BMI={inp['bmi_from_selfreport']}")
-            print(f"  ➤ Predicted: {pred}\n")
+            print(f"  Predicted: {pred}\n")
 
     else:
-        print("⚠️ Unexpected format:", type(preds))
+        print("Unexpected format:", type(preds))
 
 else:
-    print(f"❌ API Error {response.status_code}")
+    print(f"API Error {response.status_code}")
     print(response.text)
-```
-
-
-```{python}
-print(response.status_code)
-print(response.text)
 ```
