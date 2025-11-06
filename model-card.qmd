@@ -447,23 +447,30 @@ print(board.pin_list())
 
 ## test api 
 import requests
-import pandas as pd
-import time
 
-API = "http://localhost:3258"
+API = "http://appliedml.infosci.cornell.edu:3258"
 
-# Wait for container to boot
-
-# Prepare one test observation (must match your model features)
+# 2) Build ONE test row from the same cleaned file you trained on
 df = pd.read_csv("data-raw/nhanes2123_prediabetes_features_labeled_clean.csv")
-X = df.drop(columns=["prediabetes_flag"]).fillna(0)
-sample = X.iloc[[0]]
+X = df.drop(columns=["prediabetes_flag"])
 
-# Send to API for prediction
-resp = requests.post(f"{API}/predict", json={"data": sample.to_dict(orient="records")})
+# Fill NAs the same way you did at train time
+for col in X.columns:
+    if X[col].dtype == "O":
+        X[col] = X[col].fillna("Unknown")
+    else:
+        X[col] = X[col].fillna(0)
 
-print("Status:", resp.status_code)
-print("Response:", resp.text)
+sample = X.iloc[[0]]  # first row as a valid example
+
+# 3) Send as a LIST of rows (the API expects a list of records)
+payload = sample.to_dict(orient="records")
+r = requests.post(f"{API}/predict", json=payload, timeout=10)
+
+print("STATUS:", r.status_code)
+print("BODY:", r.text)
+
+
 
 
 ```
