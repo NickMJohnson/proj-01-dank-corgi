@@ -9,38 +9,37 @@ execute:
 ---
 
 ```{python}
-# from IPython.display import display, Markdown
-# import datetime
-# display(Markdown(f"""
-# ###### {datetime.date.today()}
-# """))
+ from IPython.display import display, Markdown
+ import datetime
+ display(Markdown(f"""
+ ###### {datetime.date.today()}
+ """))
 ```
 
 ```{python}
-#| tags: [parameters]
-#| include: false
-# import pins
-# from dotenv import load_dotenv, find_dotenv
-# load_dotenv(find_dotenv())
+# | tags: [parameters]
+# | include: false
+import pins
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
 
-# board for project storage
+#board for project storage
 
-# board = pins.board_gcs(path = "info-4940-models/[FILL-IN]/", allow_pickle_read = True)__
+board = pins.board_gcs(path="info-4940-models/ji92/", allow_pickle_read=True)
 ```
 
 ```{python}
 #| include: false
-# import pandas as pd
-# import numpy as np
-# import matplotlib.pyplot as plt
-# from sklearn import metrics
-# import vetiver
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn import metrics
+import vetiver
 
-# Load the final model pinned to GCS
-
-# v = vetiver.VetiverModel.from_pin(
-# board, "[FILL IN]", version = "[FILL IN]"
-# )
+#Load the final model pinned to GCS
+v = vetiver.VetiverModel.from_pin(
+board, "nhanes-prediabetes-py", version = "20251105T205309Z-32e04"
+)
 ```
 
 A [model card](https://doi.org/10.1145/3287560.3287596) provides brief, transparent, responsible reporting for a trained machine learning model.
@@ -50,13 +49,13 @@ A [model card](https://doi.org/10.1145/3287560.3287596) provides brief, transpar
 - Developed by **Zhalae Daneshvari**, **Jolene Ie**, and **Nick Johnson** for INFO 4940 – Fall 2025.  
 
 ```{python}
-# model_desc = v.description
-# # num_features = len(v.prototype.construct().dict())
-# num_features = len(v.prototype.model_construct().model_dump())
+model_desc = v.description
+num_features = len(v.prototype.construct().dict())
+num_features = len(v.prototype.model_construct().model_dump())
 
-# display(Markdown(f"""
-# - A {model_desc} using {num_features} feature{'s'[:num_features^1]}.
-# """))
+display(Markdown(f"""
+- A {model_desc} using {num_features} feature{'s'[:num_features^1]}.
+"""))
 ```
 
 This model card documents the final version of **[FILL IN]**, a penalized logistic regression classifier trained on NHANES 2021–2023 survey data to predict prediabetes risk.
@@ -71,18 +70,18 @@ This model card documents the final version of **[FILL IN]**, a penalized logist
 
 ### Version Metadata
 ```{python}
-# import re
+import re
 
-# version = v.metadata.version
-# match = re.match(r"(\d{8}T\d{6})", version)
-# if match:
-#     time_created = datetime.datetime.strptime(match.group(1), '%Y%m%dT%H%M%S').strftime('%Y-%m-%d %H:%M:%S')
-# else:
-#     time_created = "Unknown"
+version = v.metadata.version
+match = re.match(r"(\d{8}T\d{6})", version)
+if match:
+    time_created = datetime.datetime.strptime(match.group(1), '%Y%m%dT%H%M%S').strftime('%Y-%m-%d %H:%M:%S')
+else:
+    time_created = "Unknown"
 
-# display(Markdown(f"""
-# - Version {version} was created at {time_created}
-# """))
+display(Markdown(f"""
+- Version {version} was created at {time_created}
+"""))
 ```
 
 - This model was developed as part of the coursework for INFO 4940/5940 — Applied Machine Learning at Cornell University (Fall 2025). The code and analysis are for educational purposes only and are licensed under a Creative Commons Attribution 4.0 International (CC BY 4.0) license. The underlying General Social Survey (GSS) data are publicly available and governed by NORC’s data-use policy.
@@ -387,6 +386,7 @@ Overall, the model aligns with the principles of **responsible, transparent, and
 
 ## API Deployment 
 ```{python}
+#| include: false
 # --- Auth & board ---
 import os, gcsfs, pins
 SA_KEY = "/home/ji92/proj-01-dank-corgi/service-auth.json"

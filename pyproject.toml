@@ -5,10 +5,13 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "gcsfs>=2025.10.0",
     "pandas>=2.3.2",
+    "pins>=0.9.0",
     "plotnine>=0.15.0",
     "quarto-cli>=1.7.33",
     "scikit-learn>=1.7.1",
     "seaborn>=0.13.2",
     "skimpy>=0.0.18",
+    "vetiver>=0.2.6",
 ]
