@@ -10,101 +10,117 @@ execute:
 
 # API Deployment
 ```{python}
-# make board
-import pandas as pd
-import pins, os
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.linear_model import LogisticRegression
-from vetiver import VetiverModel, vetiver_pin_write
 
+# --- Auth & board setup ---
+import os, gcsfs, pins
 SA_KEY = "/home/ji92/proj-01-dank-corgi/service-auth.json"
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = SA_KEY
+gcsfs.GCSFileSystem.clear_instance_cache()
 
-board = pins.board_gcs(bucket="info-4940-models", path="ji92/", allow_pickle_read=True)
+board = pins.board_gcs(path="info-4940-models/ji92/", allow_pickle_read=True)
 
-# data for api
-DF_PATH = "data-raw/nhanes2123_prediabetes_features_labeled_clean.csv"
-df = pd.read_csv(DF_PATH)
-assert "prediabetes_flag" in df.columns, "Label missing in cleaned file."
+# --- Data ---
+import pandas as pd
+CSV_PATH = "data-raw/nhanes2123_surveyonly_clean.csv"
+df = pd.read_csv(CSV_PATH)
+target_col = "prediabetes_flag"
 
-X = df.drop(columns=["prediabetes_flag"])
-y = df["prediabetes_flag"]
+X = df.drop(columns=[target_col])
+y = df[target_col]
 
-# fill NA exactly how inference will expect
-for col in X.columns:
-    if X[col].dtype == "O":
-        X[col] = X[col].fillna("Unknown")
-    else:
-        X[col] = X[col].fillna(0)
+# --- Preprocessing pipeline (same as notebook) ---
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, FunctionTransformer
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LogisticRegressionCV
+from sklearn.model_selection import StratifiedKFold
 
-# making the model
-num_cols = X.select_dtypes(include=["number"]).columns
-cat_cols = X.select_dtypes(include=["object"]).columns
+RANDOM_STATE = 42
+present_numeric = [
+    "age_years", "bmi_from_selfreport", "weight_change_1y_lb",
+    "sleep_hours_weekdays", "sedentary_minutes", "drinks_per_day_12mo",
+]
+present_categorical = [
+    "sex","race_eth","ever_smoker","current_smoker","ever_high_bp_ans",
+    "ever_high_chol_ans","smoked_100_cigs_ans","smoke_now_ans",
+    "tried_lose_weight_past_year_ans","regular_periods_12mo_ans",
+    "dpq_poor_appetite_ans","ever_asthma_ans","anemia_treatment_3mo_ans",
+    "ever_chf_ans","ever_heart_attack_ans","ever_stroke_ans",
+    "ever_thyroid_problem_ans","ever_liver_condition_ans",
+]
+def to_str_func(X):
+    return X.astype(str)
 
-pre = ColumnTransformer(
-    transformers=[
-        ("num", StandardScaler(), num_cols),
-        ("cat", OneHotEncoder(handle_unknown="ignore"), cat_cols),
-    ]
-)
+num_pipe = Pipeline([
+    ("imp", SimpleImputer(strategy="median", add_indicator=True)),
+    ("sc", StandardScaler()),
+])
+cat_pipe = Pipeline([
+    ("imp", SimpleImputer(strategy="constant", fill_value="Unknown")),
+    ("to_str", FunctionTransformer(to_str_func)),
+    ("ohe", OneHotEncoder(handle_unknown="ignore", sparse_output=False, min_frequency=0.02)),
+])
+preprocess = ColumnTransformer([
+    ("num", num_pipe, present_numeric),
+    ("cat", cat_pipe, present_categorical),
+])
 
-model = Pipeline(
-    [
-        ("pre", pre),
-        ("logit", LogisticRegression(max_iter=1000)),
-    ]
-)
-
+# --- Model: L2 (ridge) Logistic Regression with CV ---
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+model = Pipeline([
+    ("prep", preprocess),
+    ("clf", LogisticRegressionCV(
+        Cs=[0.1, 1, 10],
+        cv=cv,
+        penalty="l2",
+        solver="lbfgs",
+        max_iter=3000,
+        scoring="roc_auc",
+        random_state=RANDOM_STATE,
+    )),
+])
 model.fit(X, y)
 
-# vetiver wrap & pin
-proto = X.iloc[[0]]  # small prototype defines API schema
+# --- Vetiver wrap & pin ---
+from vetiver import VetiverModel, vetiver_pin_write
+proto = X.head(2)
 v = VetiverModel(
     model=model,
-    model_name="nhanes-prediabetes-py",
+    model_name="nhanes-prediabetes-new",
     prototype_data=proto,
+    metadata={"user": {"columns": list(X.columns)}},
 )
 
 vetiver_pin_write(board, v)
-print("Pinned model: nhanes-prediabetes-py")
 
+print("✅ Model pinned successfully!")
+print("Current pins:", board.pin_list())
+# list versions for the new model
+board.pin_versions("nhanes-prediabetes-new")
 ```
 
-
-## Generate predictions from API
 ```{python}
-# test api 
-
-import requests
 import pandas as pd
+import requests
 
+# --- API endpoint (replace port if changed) ---
 API = "http://appliedml.infosci.cornell.edu:3258"
 
-#check API is alive
-ping = requests.get(f"{API}/ping", timeout=5)
-ping.raise_for_status()
-print("PING:", ping.json())
+# --- Load the same cleaned dataset used for training ---
+TEST_PATH = "data-raw/nhanes2123_surveyonly_clean.csv"
+df = pd.read_csv(TEST_PATH)
 
-#build ONE valid row from the same cleaned CSV used for training
-df = pd.read_csv("data-raw/nhanes2123_prediabetes_features_labeled_clean.csv")
+# --- Prepare a single test sample (matches schema exactly) ---
 X = df.drop(columns=["prediabetes_flag"])
-
-#fill NA like training
-for col in X.columns:
-    if X[col].dtype == "O":
-        X[col] = X[col].fillna("Unknown")
-    else:
-        X[col] = X[col].fillna(0)
-
-sample = X.iloc[[0]]  # one valid observation
-
-#print as a list of records
+sample = X.iloc[[0]]  # first row
 payload = sample.to_dict(orient="records")
-resp = requests.post(f"{API}/predict", json=payload, timeout=10)
-print("STATUS:", resp.status_code)
-print("BODY:", resp.text)
 
+# --- Send request to Vetiver API ---
+r = requests.post(f"{API}/predict", json=payload, timeout=10)
+
+# --- Display results ---
+print("STATUS:", r.status_code)
+print("BODY:", r.text)
 ```
 
