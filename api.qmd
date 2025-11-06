@@ -190,115 +190,78 @@ model.fit(X_train, y_train)
 print("✅ Model trained successfully!")
 
 # --- Evaluate ---
-p_test = model.predict_proba(X_test)[:, 1]
-y_pred = (p_test >= 0.5).astype(int)
+# p_test = model.predict_proba(X_test)[:, 1]
+# y_pred = (p_test >= 0.5).astype(int)
 
-print("ROC-AUC:", roc_auc_score(y_test, p_test))
-print("Accuracy:", accuracy_score(y_test, y_pred))
-print("\nClassification Report:\n", classification_report(y_test, y_pred))
+# print("ROC-AUC:", roc_auc_score(y_test, p_test))
+# print("Accuracy:", accuracy_score(y_test, y_pred))
+# print("\nClassification Report:\n", classification_report(y_test, y_pred))
 
 ```
 
 # manual predictions
-
 ```{python}
-# pick any row
-sample = X_test.iloc[[0]]
+# # pick any row
+# sample = X_test.iloc[[0]]
 
-print("Sample input:\n")
-display(sample)
+# print("Sample input:\n")
+# display(sample)
 
-# model outputs a probability of prediabetes (class 1)
-prob = model.predict_proba(sample)[0, 1]
-pred = int(prob >= 0.5)
+# # model outputs a probability of prediabetes (class 1)
+# prob = model.predict_proba(sample)[0, 1]
+# pred = int(prob >= 0.5)
 
-print(f"Predicted probability: {prob:.3f}")
-print(f"Predicted class: {pred} (1 = prediabetic, 0 = not)")
+# print(f"Predicted probability: {prob:.3f}")
+# print(f"Predicted class: {pred} (1 = prediabetic, 0 = not)")
 
 ```
 
-
-# Pin
-```{python}
-from vetiver import VetiverModel, vetiver_pin_write
-import pins
-
-# create local temporary board that allows pickled models
-tmp_board = pins.board_temp(allow_pickle_read=True)
-
-# wrap your trained model
-v = VetiverModel(
-    model=model,
-    model_name="nhanes-prediabetes-local",
-    prototype_data=X.head(2),
-    metadata={"user": {"columns": list(X.columns)}},
-)
-
-# pin the model
-vetiver_pin_write(tmp_board, v)
-print("✅ Model pinned locally to temp board.")
-print("Available pins:", tmp_board.pin_list())
-
-# reload the model (pass both board and name)
-v_loaded = VetiverModel.from_pin(tmp_board, "nhanes-prediabetes-local")
-print("✅ Model successfully reloaded from pin.")
-
-# test the loaded model
-pred_prob = v_loaded.model.predict_proba(custom)[0, 1]
-pred_class = int(pred_prob >= 0.5)
-
-print(f"Reloaded model predicted probability: {pred_prob:.3f}")
-print(f"Predicted class: {pred_class}")
-
-
-
-```
-
-# pin model to gcs
-
-```{python}
-from pins import board_gcs
-from vetiver import VetiverModel, vetiver_pin_write
-
-# --- Board setup ---
-board = board_gcs("info-4940-models/zwd3/", allow_pickle_read=True)
-
-# --- Wrap your trained model ---
-v = VetiverModel(
-    model=model,
-    model_name="nhanes-prediabetes-zwd3-final",
-    prototype_data=X.head(2),
-    description="Logistic regression pipeline predicting prediabetes based on NHANES survey data."
-)
-
-# --- Pin it ---
-vetiver_pin_write(board, v)
-
-print("✅ Model pinned successfully to info-4940-models/zwd3/")
-print("📦 Pins:", board.pin_list())
-print("📚 Versions:", board.pin_versions("nhanes-prediabetes-zwd3-final"))
-
-```
+# Make docker file
 
 ```{python}
 import os, gcsfs, pins
-from vetiver import VetiverModel, vetiver_pin_write
-
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/zwd3/proj-01-dank-corgi/service-auth.json"
-
+SA_KEY = "/home/zwd3/proj-01-dank-corgi/service-auth.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = SA_KEY
 gcsfs.GCSFileSystem.clear_instance_cache()
 
 board = pins.board_gcs("info-4940-models/zwd3/", allow_pickle_read=True)
 
 v = VetiverModel(
     model=model,
-    model_name="nhanes-prediabetes-zwd3-final",
+    model_name="prediabetes-model-1",   # ✅ same name you’ll use in prepare_docker
     prototype_data=X.head(2),
-    description="Final logistic regression model predicting prediabetes from NHANES survey data."
+    description="Logistic regression model predicting prediabetes from NHANES survey data."
 )
 
 vetiver_pin_write(board, v)
-print("✅ Model pinned successfully!")
 
+```
+```{python}
+import vetiver
+from vetiver import VetiverModel, vetiver_pin_write
+
+vetiver.prepare_docker(
+    board = board, 
+    pin_name = "prediabetes-model-1"
+)
+```
+
+
+```{python}
+# --- STEP 1: Auth setup ---
+import os, gcsfs, pins
+
+# point to your service account JSON
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/zwd3/proj-01-dank-corgi/service-auth.json"
+
+# clear any old gcsfs sessions
+gcsfs.GCSFileSystem.clear_instance_cache()
+
+# --- STEP 2: Connect to your subfolder on the class bucket ---
+board = pins.board_gcs("info-4940-models/zwd3/", allow_pickle_read=True)
+
+# --- STEP 3: Test that authentication works ---
+print("✅ Connected! Your available pins:")
+print(board.pin_list())
 
 ```
