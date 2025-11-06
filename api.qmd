@@ -231,7 +231,7 @@ board = pins.board_gcs("info-4940-models/ji92/", allow_pickle_read=True)
 
 v = VetiverModel(
     model=model,
-    model_name="prediabetes-model-1",   # ✅ same name you’ll use in prepare_docker
+    model_name="prediabetes-model-2",   # ✅ same name you’ll use in prepare_docker
     prototype_data=proto,
     description="Logistic regression model predicting prediabetes from NHANES survey data."
 )
