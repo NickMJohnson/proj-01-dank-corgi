@@ -1,0 +1,110 @@
+---
+title: "API Deployment and Testing: NHANES Prediabetes Model"
+author: "Zhalae Daneshvari, Jolene Ie, Nick Johnson"
+format: html
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# API Deployment
+```{python}
+# make board
+import pandas as pd
+import pins, os
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.linear_model import LogisticRegression
+from vetiver import VetiverModel, vetiver_pin_write
+
+SA_KEY = "/home/ji92/proj-01-dank-corgi/service-auth.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = SA_KEY
+
+board = pins.board_gcs(bucket="info-4940-models", path="ji92/", allow_pickle_read=True)
+
+# data for api
+DF_PATH = "data-raw/nhanes2123_prediabetes_features_labeled_clean.csv"
+df = pd.read_csv(DF_PATH)
+assert "prediabetes_flag" in df.columns, "Label missing in cleaned file."
+
+X = df.drop(columns=["prediabetes_flag"])
+y = df["prediabetes_flag"]
+
+# fill NA exactly how inference will expect
+for col in X.columns:
+    if X[col].dtype == "O":
+        X[col] = X[col].fillna("Unknown")
+    else:
+        X[col] = X[col].fillna(0)
+
+# making the model
+num_cols = X.select_dtypes(include=["number"]).columns
+cat_cols = X.select_dtypes(include=["object"]).columns
+
+pre = ColumnTransformer(
+    transformers=[
+        ("num", StandardScaler(), num_cols),
+        ("cat", OneHotEncoder(handle_unknown="ignore"), cat_cols),
+    ]
+)
+
+model = Pipeline(
+    [
+        ("pre", pre),
+        ("logit", LogisticRegression(max_iter=1000)),
+    ]
+)
+
+model.fit(X, y)
+
+# vetiver wrap & pin
+proto = X.iloc[[0]]  # small prototype defines API schema
+v = VetiverModel(
+    model=model,
+    model_name="nhanes-prediabetes-py",
+    prototype_data=proto,
+)
+
+vetiver_pin_write(board, v)
+print("Pinned model: nhanes-prediabetes-py")
+
+```
+
+
+## Generate predictions from API
+```{python}
+# test api 
+
+import requests
+import pandas as pd
+
+API = "http://appliedml.infosci.cornell.edu:3258"
+
+#check API is alive
+ping = requests.get(f"{API}/ping", timeout=5)
+ping.raise_for_status()
+print("PING:", ping.json())
+
+#build ONE valid row from the same cleaned CSV used for training
+df = pd.read_csv("data-raw/nhanes2123_prediabetes_features_labeled_clean.csv")
+X = df.drop(columns=["prediabetes_flag"])
+
+#fill NA like training
+for col in X.columns:
+    if X[col].dtype == "O":
+        X[col] = X[col].fillna("Unknown")
+    else:
+        X[col] = X[col].fillna(0)
+
+sample = X.iloc[[0]]  # one valid observation
+
+#print as a list of records
+payload = sample.to_dict(orient="records")
+resp = requests.post(f"{API}/predict", json=payload, timeout=10)
+print("STATUS:", resp.status_code)
+print("BODY:", resp.text)
+
+```
+
