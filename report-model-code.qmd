@@ -1108,7 +1108,3 @@ for tag, idx in zip(labels, examples):
     display(dfexp)
 
 ```
-
-```{python}
-
-```
