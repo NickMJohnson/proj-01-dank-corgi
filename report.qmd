@@ -393,12 +393,14 @@ Race and ethnicity also contribute meaningfully, primarily reflecting structural
 ![Partial Dependence Plot Age](plots/pdp_age_years.png){width="45%"}
 ![Partial Dependence Plot BMI](plots/pdp_bmi_from_selfreport.png){width="45%"}
 
-Age and BMI show monotone increases in predicted probability — expected in metabolic risk.
+Age and BMI show monotone increases in predicted probability this aligns with intuition that a person who is older with a higher BMI is more likely to have prediabetes than someone young with a low BMI.
 
 ![Partial Dependence Plot Sedentary Minutes](plots/pdp_sedentary_minutes.png){width="45%"}
 ![Partial Dependence Plot Sleep Drinke Per Day](plots/pdp_drinks_per_day_12mo.png){width="45%"}
 
-Sedentary minutes and drinks per day show mild or slightly negative slopes, which likely reflect confounding: Younger adults tend to report more sedentary time or alcohol consumption yet lower BMI and lower baseline prediabetes prevalence.
+Sedentary minutes and drinks per day have slight negative slopes, these likely reflect confounding: Younger adults tend to report more sedentary time or alcohol consumption but have lower BMI and a lower baseline prediabetes prevalence.
+
+
 
 **3. Observation-specific explanations**\
 We provide two complementary views:
