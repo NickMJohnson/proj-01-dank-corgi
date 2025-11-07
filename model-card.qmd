@@ -1,5 +1,5 @@
 ---
-title: "Model Card: preddiabetes-model-3"
+title: "Model Card: prediabetes-model-3"
 author: "Zhalae Daneshvari, Jolene Ie, Nick Johnson"
 format: typst
 execute:
