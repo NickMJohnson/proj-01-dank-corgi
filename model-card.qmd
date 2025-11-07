@@ -296,6 +296,9 @@ v.prototype.model_json_schema()
 ```
 
 # Quantitative analyses
+
+The exploratory data analysis of the **cleaned NHANES 2021–2023 dataset** provides a comprehensive overview of **5,099 adult respondents** and **58 questionnaire-derived variables** used for prediabetes risk modeling. This dataset integrates demographic, lifestyle, and medical history modules (DEMO, WHQ, SLQ, SMQ, MCQ, DPQ), where **laboratory values were excluded** to maintain generalizability for non-clinical screening.
+
 ```{python}
 ## Automated exploratory analysis of the held-out NHANES test dataset
 import matplotlib.pyplot as plt
@@ -308,7 +311,10 @@ nhanes_test = pd.read_csv("data-raw/nhanes2123_prediabetes_features_labeled_clea
 # basic structure
 print(nhanes_test.info())
 print(nhanes_test.describe(include="all").T.head(15))
+```
 
+### Missingness and data quality
+```{python}
 # missing values summary
 missing = nhanes_test.isna().mean().sort_values(ascending=False).head(10)
 plt.figure(figsize=(6,3))
@@ -316,7 +322,17 @@ missing.plot(kind="barh", color="salmon")
 plt.title("Top 10 Features by Missing Value Rate")
 plt.xlabel("Proportion Missing")
 plt.show()
+```
 
+### Missingness and data quality
+The **top 10 features by missingness** (visualized in the red bar chart) are dominated by low-response clinical liver condition variables:
+- `liver_fatty_code`, `liver_fatty_ans`, `liver_cirrhosis_code`, `liver_autoimmune_hep_code`, and `liver_viral_hep_code` all exceed **90–99% missingness**, primarily due to restricted exam subsampling and post-survey questions.  
+- These features were therefore **excluded during preprocessing** to avoid introducing bias or instability.
+
+By contrast, core questionnaire items such as `age_years`, `sex`, `race_eth`, `ever_high_bp_ans`, and `ever_high_chol_ans` maintain near-complete coverage (>98%), confirming reliability for modeling.
+
+### Class balance
+```{python}
 # class balance
 plt.figure(figsize=(5,3))
 sns.countplot(x="prediabetes_flag", data=nhanes_test, palette="Set2")
@@ -324,7 +340,13 @@ plt.title("Class Distribution in Cleaned NHANES Dataset")
 plt.xlabel("Prediabetes Flag")
 plt.ylabel("Count")
 plt.show()
+```
 
+
+The **class distribution plot** (green vs. orange bars) shows moderate imbalance, with a slightly larger proportion of non-prediabetic respondents (`0`) compared to prediabetic respondents (`1`).  This class ratio (~58% vs. 42%) aligns with the overall NHANES 2021–2023 health survey estimates, supporting external validity of the labeling process.
+
+### Correlation structure
+```{python}
 # correlation heatmap for numeric features
 num_cols = nhanes_test.select_dtypes(include=["int64", "float64"]).columns
 corr = nhanes_test[num_cols].corr()
@@ -336,8 +358,11 @@ plt.show()
 
 ```
 
-The exploratory data analysis of the **cleaned NHANES 2021–2023 dataset** provides a comprehensive overview of **5,099 adult respondents** and **58 questionnaire-derived variables** used for prediabetes risk modeling. This dataset integrates demographic, lifestyle, and medical history modules (DEMO, WHQ, SLQ, SMQ, MCQ, DPQ), where **laboratory values were excluded** to maintain generalizability for non-clinical screening.
-
+The **correlation heatmap** of numeric variables shows several important relationships:
+- `bmi_from_selfreport`, `weight_lb`, and `height_in` form a coherent anthropometric cluster.  
+- `sedentary_minutes` and `sleep_hours_weekdays` display minimal correlation, suggesting independent behavioral effects.  
+- Disease history variables (e.g., `ever_high_bp_code`, `ever_high_chol_code`, `ever_asthma_code`) exhibit low intercorrelation (|r| < 0.3), confirming low multicollinearity suitable for regression-based models.  
+- The outcome variable `prediabetes_flag` is most correlated with **BMI**, **age**, and **ever_high_bp_code**, which aligns with established metabolic risk literature.
 
 ### Overall distribution and completeness
 - **Prediabetes prevalence:** 42.3% (`prediabetes_flag = 1`), confirming the expected mid-range population-level prevalence.  
@@ -345,26 +370,6 @@ The exploratory data analysis of the **cleaned NHANES 2021–2023 dataset** prov
   Most respondents identified as **Non-Hispanic White (60%)**, followed by Hispanic, Non-Hispanic Black, and Asian groups.  
 - **Behavioral variables:** Average sleep = 7.7 hours, sedentary time ≈ 360 minutes/day, average drinks per day = 2.6 (among current drinkers).  
 - **Physical measures:** Mean BMI = 29.1 (IQR 24.2–32.5), consistent with national overweight/obesity trends.
-
-
-### Missingness and data quality
-The **top 10 features by missingness** (visualized in the red bar chart) are dominated by low-response clinical liver condition variables:
-- `liver_fatty_code`, `liver_fatty_ans`, `liver_cirrhosis_code`, `liver_autoimmune_hep_code`, and `liver_viral_hep_code` all exceed **90–99% missingness**, primarily due to restricted exam subsampling and post-survey questions.  
-- These features were therefore **excluded during preprocessing** to avoid introducing bias or instability.
-
-By contrast, core questionnaire items such as `age_years`, `sex`, `race_eth`, `ever_high_bp_ans`, and `ever_high_chol_ans` maintain near-complete coverage (>98%), confirming reliability for modeling.
-
-
-### Class balance
-The **class distribution plot** (green vs. orange bars) shows moderate imbalance, with a slightly larger proportion of non-prediabetic respondents (`0`) compared to prediabetic respondents (`1`).  This class ratio (~58% vs. 42%) aligns with the overall NHANES 2021–2023 health survey estimates, supporting external validity of the labeling process.
-
-
-### Correlation structure
-The **correlation heatmap** of numeric variables shows several important relationships:
-- `bmi_from_selfreport`, `weight_lb`, and `height_in` form a coherent anthropometric cluster.  
-- `sedentary_minutes` and `sleep_hours_weekdays` display minimal correlation, suggesting independent behavioral effects.  
-- Disease history variables (e.g., `ever_high_bp_code`, `ever_high_chol_code`, `ever_asthma_code`) exhibit low intercorrelation (|r| < 0.3), confirming low multicollinearity suitable for regression-based models.  
-- The outcome variable `prediabetes_flag` is most correlated with **BMI**, **age**, and **ever_high_bp_code**, which aligns with established metabolic risk literature.
 
 ### Summary interpretation
 This quantitative analysis confirms that the cleaned NHANES dataset is **representative, well-balanced, and structurally sound** for supervised learning tasks. Despite the presence of highly incomplete clinical liver features, the retained 50+ questionnaire-based variables provide robust and interpretable predictors. The distributions across demographics, lifestyle, and self-reported medical history support the use of **logistic regression and tree-based models** for generalizable prediabetes risk prediction.
@@ -403,22 +408,26 @@ metrics_test = {
 pd.DataFrame(metrics_test.items(), columns=["Metric", "Value"])
 ```
 
-### Interpretation
+### Quantitative Interpretation of Test Performance
 
-On the held-out NHANES test set, the model achieved **accuracy 0.644**, **ROC AUC 0.700**, and **Brier score 0.216**. Together, these indicate **moderate discrimination** and **reasonable probability calibration** for an educational screening model:
+On the held-out **NHANES 2021–2023 test set**, the model achieved an **accuracy of 0.644**, **ROC AUC of 0.700**, and a **Brier score of 0.216**.  
+Together, these results indicate **moderate discrimination** and **reasonable probability calibration**, which are appropriate for an educational screening model that relies solely on self-reported survey data rather than laboratory biomarkers.
 
-- **Accuracy 0.644**: about 64.4% of respondents are classified correctly. Because the dataset is imbalanced, accuracy alone is not sufficient for judging performance.
-- **ROC AUC 0.700**: the model can rank a randomly chosen positive case above a randomly chosen negative case about 70% of the time—acceptable discrimination for a lightweight, questionnaire-only model.
-- **Brier score 0.216**: average squared error of predicted probabilities is ~0.216, suggesting risk scores are **directionally reliable** (not overly overconfident).
+- **Accuracy (0.644):** Approximately 64.4% of respondents were classified correctly. While this reflects decent overall performance, accuracy alone can be misleading in imbalanced datasets like NHANES, where the prevalence of prediabetes (~42%) creates uneven class distributions; in such situations, a model might seem to perform well simply because it predicts the more common outcome more often, rather than truly distinguishing between prediabetic and non-prediabetic individuals. For this reason, discrimination and calibration metrics provide more meaningful insight.  
+- **ROC AUC (0.700):** The model correctly ranks a randomly selected prediabetic individual above a non-prediabetic individual about 70% of the time. This level of discrimination indicates that the model can reliably distinguish higher-risk individuals based on self-reported health and lifestyle information, reflecting meaningful but moderate predictive power without signs of overfitting.
+- **Brier Score (0.216):** The average squared error between predicted probabilities and true outcomes is approximately 0.216. This value reflects **well-calibrated, directionally reliable probabilities**—the model is not excessively overconfident in its risk estimates.
 
-**What this means for screening use (non-clinical):**
-- Use the model to **prioritize follow-up** (e.g., labs) rather than to make decisions. It provides useful **risk ranking** (AUC) and **interpretable probabilities** (Brier), but it is not a diagnostic.
-- Threshold choice matters. If recall (sensitivity) is the priority, select a **lower threshold** than 0.50 and report precision/recall trade-offs in context.
+**Interpretation for screening use (non-clinical):**  
+This model should be viewed as a **supportive tool** for identifying individuals who might warrant follow-up testing rather than a diagnostic system. It is most useful for **risk stratification**—prioritizing who should receive additional screening (e.g., fasting glucose or HbA1c tests). The **ROC AUC** demonstrates its ability to rank individuals by risk, while the **Brier score** supports its use for probabilistic interpretation.  
+**Threshold selection is crucial:** lowering the classification threshold below 0.50 can improve **recall (sensitivity)** if the goal is to identify more at-risk individuals, though this comes at the cost of lower precision.
 
-**Limitations & next steps:**
-- With AUC near 0.70, there is room to improve recall for higher-risk subgroups (e.g., via calibration or class-weighting).
-- Consider **probability calibration** (Platt/Isotonic) and **fairness checks** by sex and race/ethnicity to ensure consistent performance across groups.
-- External validation on a newer NHANES cycle is recommended before reuse beyond this coursework context.
+**Limitations and recommended next steps:**  
+- With an AUC around 0.70, performance is **solid but improvable**, especially for certain subgroups. Future iterations might include **class weighting**, **feature expansion**, or **probability recalibration** (e.g., Platt scaling, isotonic regression) to enhance predictive balance.  
+- Performing **fairness audits** by sex, race/ethnicity, and socioeconomic indicators will help ensure equitable calibration and consistent sensitivity across subpopulations.  
+- **External validation** on later NHANES cycles (e.g., 2024–2025) is recommended to confirm robustness over time and prevent dataset-specific overfitting.  
+- To make the model’s predictions easier to understand, you could use tools like partial dependence plots (PDPs) or SHAP values, which show how each feature affects the predicted outcome. This helps explain why the model makes certain predictions and ensures the findings are communicated clearly and responsibly—especially important in educational or public health settings.
+
+**Summary:** While the model’s metrics reflect moderate discrimination and well-calibrated probability estimates, its primary value lies in **educational transparency and risk awareness** rather than precise medical prediction.
 
 ## Disagregatted Model Performance 
 ```{python}
@@ -463,7 +472,7 @@ by_race = (
 display(by_race)
 ```
 
-### Interpretation
+### Analysis of Model Fairness Across Demographic Subgroups
 
 The disaggregated evaluation by **race/ethnicity** helps assess how consistently the model performs across different demographic subgroups in the NHANES 2021–2023 test set. Each subgroup’s sample size (`n`), prevalence of prediabetes, and evaluation metrics (accuracy, ROC AUC, and Brier score) were calculated independently using the same preprocessing and logistic regression model.
 
@@ -492,6 +501,10 @@ Future improvements could include **reweighting strategies** or **fairness-aware
 
 
 ## Visualizing Model Performance
+
+The plots below visualize two key aspects of model behavior — **discrimination** and **calibration** — on the **NHANES 2021–2023 held-out test set**.
+
+### Calibration Curve
 ```{python}
 from sklearn.calibration import CalibrationDisplay
 from sklearn.metrics import RocCurveDisplay
@@ -509,7 +522,16 @@ CalibrationDisplay.from_predictions(y_test, y_prob, n_bins=10)
 plt.title("Calibration Plot: Predicted vs. Actual Probability (NHANES Test Set)")
 plt.grid(True)
 plt.show()
+```
 
+The **calibration plot** compares the **predicted probability of prediabetes** against the **observed frequency** in each probability bin.
+
+- The **nearly diagonal alignment** of points indicates that the model’s predicted probabilities are **well-calibrated** — i.e., a predicted probability of **0.6** corresponds roughly to a **60% actual chance of prediabetes** in the data.  
+- **Slight deviations** around mid-range probabilities (**0.4–0.6**) may suggest **mild underconfidence**, which could be refined using **post-hoc calibration techniques** (e.g., *Platt scaling* or *isotonic regression*).
+
+### ROC Curve
+
+```{python}
 # ROC curve
 
 plt.figure(figsize=(6, 5))
@@ -520,12 +542,6 @@ plt.show()
 
 ```
 
-## ## Interpretation of Model Calibration and Discrimination Performance
-
-The plots above visualize two key aspects of model behavior — **discrimination** and **calibration** — on the **NHANES 2021–2023 held-out test set**.
-
-### ROC Curve
-
 The **ROC (Receiver Operating Characteristic)** curve illustrates the trade-off between the **true positive rate (sensitivity)** and **false positive rate (1 – specificity)** across all possible classification thresholds.
 
 - The model’s **area under the ROC curve (AUC)** is approximately **0.70**, indicating **moderate discrimination ability**.  
@@ -534,13 +550,6 @@ The **ROC (Receiver Operating Characteristic)** curve illustrates the trade-off 
 - The ROC curve shape is **smooth and consistent**, suggesting that the model produces **stable probability outputs** rather than erratic or overfitted predictions.
 
 Although the model’s discrimination is not perfect, it aligns with expectations for **survey-only data that omit laboratory biomarkers** — capturing general health risk patterns while maintaining interpretability.
-
-### Calibration Curve
-
-The **calibration plot** compares the **predicted probability of prediabetes** against the **observed frequency** in each probability bin.
-
-- The **nearly diagonal alignment** of points indicates that the model’s predicted probabilities are **well-calibrated** — i.e., a predicted probability of **0.6** corresponds roughly to a **60% actual chance of prediabetes** in the data.  
-- **Slight deviations** around mid-range probabilities (**0.4–0.6**) may suggest **mild underconfidence**, which could be refined using **post-hoc calibration techniques** (e.g., *Platt scaling* or *isotonic regression*).
 
 ### Summary
 
@@ -555,8 +564,6 @@ Future work could explore:
 - **Threshold optimization** to better balance sensitivity and specificity for screening scenarios.  
 - **Calibration refinement** to enhance probability accuracy for intermediate-risk individuals.  
 - **Fairness audits** across subpopulations to confirm consistent discrimination performance beyond aggregate ROC AUC.
-
-
 
 ## Custom Plots
 
@@ -634,44 +641,42 @@ Future work could explore:
 # plt.show()
 ```
 
-![Top Feature Effects Plot](feature_effects.png){width="55%"}
+![Top Feature Effects Bar Chart](feature_effects.png)
 
-## Feature Importance 
+## Feature Importance  
 
-The bar chart above summarizes the **top 20 post-preprocessing features** by their effect size on predictions from the final pipeline. Bars reflect the magnitude of each feature’s influence **after the full ColumnTransformer** (imputation → type cast → one-hot encoding → scaling). Names are prefixed by the transformer:
-- `num__…` = numeric features (median-imputed, scaled, with missing indicators)  
-- `cat__…` = categorical features (imputed → cast to string → one-hot encoded)  
-- Suffixes like `_infrequent_sklearn` indicate **rare levels auto-bucketed** by `OneHotEncoder(min_frequency=…)`.
+The bar chart above highlights the **top 20 most influential features** in the model after all preprocessing steps (imputation, type conversion, one-hot encoding, and scaling). These features represent how much each variable contributes to predicting prediabetes risk in the final trained pipeline.  
 
-### What stands out
-- **num__age_years** and **num__bmi_from_selfreport** dominate importance, matching known metabolic risk patterns (older age, higher BMI ⇒ higher risk).
-- Cardiometabolic history signals contribute meaningfully:  
-  **cat__ever_high_chol_ans_Yes**, **cat__ever_high_bp_ans_Yes**.
-- Demographic encodings show signal:  
-  **cat__race_eth_Mexican American**, **cat__race_eth_Non-Hispanic Asian**, and **cat__sex_Male** have measurable effects.
-- Several health/behavioral items register non-trivial importance, e.g.,  
-  **cat__regular_periods_12mo_ans_No**, **cat__ever_thyroid_problem_ans_infrequent_sklearn**,  
-  smoking-related indicators (**cat__smoked_100_cigs_ans_infrequent_sklearn**, **cat__ever_smoker_infrequent_sklearn**, **cat__current_smoker_1.0**, **cat__smoke_now_ans_Some days**),  
-  **num__weight_change_1y_lb**, and **cat__dpq_poor_appetite_ans_Yes**.
+Each feature name starts with a prefix showing where it came from in the data pipeline:  
+- `num__…` = numeric variables (median-imputed, scaled, and sometimes including a “missing” indicator)  
+- `cat__…` = categorical variables (filled with “Unknown,” converted to strings, and one-hot encoded)  
+- Suffixes like `_infrequent_sklearn` mark categories that appeared rarely and were grouped together by the encoder.  
 
-### How to read this figure (and its limits)
-- **Magnitude, not direction:** The plot shows effect size (from model coefficients or permutation importance).  
-  It **does not encode sign**; a large bar means “important,” not necessarily “risk increasing.”  
-  For directionality with linear models, inspect the raw `coef_`; for trees, use **partial dependence plots (PDPs)**.
-- **One-hot fragments vs. concepts:** Individual dummies (e.g., `race_eth_*`) split a concept across multiple bars.  
-  For clearer storytelling, group dummies back to their **parent variable** (e.g., “race_eth”) and sum importances.
-- **Correlation & redundancy:** Highly correlated inputs (e.g., BMI and recent weight change) can **share or swap** importance.  
-  Consider **bootstrapped importances** to assess stability.
-- **Missing indicators:** Numeric pipelines add “missing” flags; if they appear near the top, missingness itself carries signal.  
-  That can indicate **systematic patterns in who reports/doesn’t report** certain values.
+This breakdown helps explain how the model interprets mixed survey data from NHANES, combining lifestyle, demographic, and medical history factors into a single interpretable representation.  
 
-### Takeaways for the model card
-- The model’s strongest signals are **age** and **BMI**, followed by **hypertension**/**hypercholesterolemia** history, and several demographic and smoking indicators.  
-- Importance patterns are **directionally consistent** with epidemiology, increasing trust in face validity.  
-- Because of one-hot encoding and correlated features, **grouped importances and PDPs** should accompany this plot for interpretation.  
-- For fairness review, repeat importance summaries and PDPs **within subgroups** (e.g., by sex or race/ethnicity) and compare shapes/levels.
+### What stands out  
 
-> Tip (optional, if you want a signed view for a logistic-regression winner): plot the top **positive** and **negative** coefficients by using `clf.coef_.ravel()` and joining on `prep.get_feature_names_out()`. This complements the magnitude-only view shown here.
+The most important features are **age** and **BMI**, which both show strong relationships with prediabetes risk. Older adults and individuals with higher BMI values tend to have a higher predicted likelihood of prediabetes, which is a finding that aligns well with public health research.  
+
+Health history variables like **high cholesterol** and **high blood pressure** also have large effects, reflecting how existing metabolic conditions often cluster together. Demographic factors such as **male sex**, **Mexican American**, and **Non-Hispanic Asian** identities show measurable influence as well, likely reflecting real-world prevalence patterns observed in epidemiological studies.  
+
+Behavioral factors, including **weight change over the past year**, **sleep and appetite patterns**, and several **smoking-related variables** — also contribute meaningfully. These highlight how the model captures lifestyle-driven variations in metabolic risk, not just static demographic traits.  
+
+### How to read this figure  
+
+Each bar shows how much a feature contributes to predictions, **the larger the bar, the stronger its impact**. This doesn’t mean whether it increases or decreases risk, only how influential it is overall. To understand direction such as whether a feature raises or lowers predicted risk, additional plots like **partial dependence** or **SHAP** analyses would be helpful.  
+
+Because of one-hot encoding, categorical variables (like race or smoking status) are split into multiple parts, so their influence is spread across several bars. It’s also important to remember that some features are correlated — for instance, **BMI** and **recent weight change** — meaning they might share or trade off influence depending on how the model was fit.  
+
+If a “missing” indicator appears as important, that doesn’t mean the missing value itself predicts prediabetes; rather, it may reflect patterns in **who tends to skip certain questions**, which can hold indirect meaning in survey-based datasets.  
+
+### Takeaways  
+
+Overall, the model relies most on **age**, **BMI**, **blood pressure**, **cholesterol**, and **smoking behaviors**, along with several demographic and lifestyle variables. These results make sense, align with known medical literature, and help confirm that the model captures realistic patterns instead of random noise.  
+
+The importance rankings also show that even without lab data, **self-reported and behavioral information** can meaningfully signal risk. For further analysis, plotting **positive and negative coefficients** from the logistic regression or computing **SHAP values** could help explain how each feature affects individual predictions.  
+
+Repeating this kind of analysis across **different subgroups** (e.g., race, sex, or age groups) could also reveal where the model performs differently and guide future fairness or calibration improvements.  
 
 ## Ethical considerations
 This project involved building predictive models on **NHANES 2021–2023 questionnaire data**, which include sensitive demographic, behavioral, and health-related variables. Given the medical nature of the dataset, the primary ethical concern is avoiding **misuse of model outputs** in clinical or policy contexts without proper validation. Although the model uses self-reported, non-laboratory variables to predict prediabetes risk, it should not be interpreted as a diagnostic or clinical decision tool.  
@@ -682,7 +687,6 @@ To mitigate these concerns:
 - The model’s purpose is **educational and exploratory**, focusing on explainability and transparency over raw predictive accuracy.  
 - All features are **interpretable self-reported variables**, and model coefficients are made publicly visible to clarify how predictions are generated.  
 - No personally identifiable information is used, and all results are aggregated to ensure respondent anonymity.  
-
 
 ## Caveats & recommendations
 
