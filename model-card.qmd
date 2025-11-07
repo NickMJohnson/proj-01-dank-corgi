@@ -1,5 +1,5 @@
 ---
-title: "Model Card: [FILL IN]"
+title: "Model Card: preddiabetes-model-3"
 author: "Zhalae Daneshvari, Jolene Ie, Nick Johnson"
 format: typst
 execute:
@@ -561,94 +561,80 @@ Future work could explore:
 ## Custom Plots
 
 ```{python}
-# --- 1) Name-safe categorical pipeline ---
-from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
-from sklearn.impute import SimpleImputer
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.base import clone
+# --- Imports
+# import numpy as np
+# import pandas as pd
+# import matplotlib.pyplot as plt
 
-# your lists from training
-# present_numeric, present_categorical, X_train, y_train, model_final, winner_name
+# from sklearn.metrics import accuracy_score, roc_auc_score, brier_score_loss
+# from sklearn.compose import ColumnTransformer
+# from sklearn.inspection import permutation_importance
 
-cat_pipe_fixed = Pipeline([
-    ("imp", SimpleImputer(strategy="constant", fill_value="Unknown")),
-    ("to_str", FunctionTransformer(lambda X: X.astype(str), feature_names_out="one-to-one")),
-    ("ohe", OneHotEncoder(handle_unknown="ignore", sparse_output=False, min_frequency=0.02)),
-])
+# # --- 1) Build X_test / y_test like training (let the pipeline do preprocessing)
+# X_test = nhanes_test.drop(columns=["prediabetes_flag"]).copy()
+# y_test = nhanes_test["prediabetes_flag"].astype(int)
 
-num_pipe_fixed = Pipeline([
-    ("imp", SimpleImputer(strategy="median", add_indicator=True)),
-    ("sc", StandardScaler()),
-])
+# # --- 2) Predict with the Vetiver-wrapped pipeline
+# proba = v.model.predict_proba(X_test)[:, list(v.model.classes_).index(1)]
+# y_pred = v.model.predict(X_test)
 
-preprocess_fixed = ColumnTransformer(
-    transformers=[
-        ("num", num_pipe_fixed, present_numeric),
-        ("cat", cat_pipe_fixed, present_categorical),
-    ],
-    remainder="drop",
-)
+# # --- 3) Metrics
+# metrics_test = {
+#     "accuracy": accuracy_score(y_test, y_pred),
+#     "roc_auc": roc_auc_score(y_test, proba),
+#     "brier_score": brier_score_loss(y_test, proba, pos_label=1),
+# }
+# pd.DataFrame(metrics_test.items(), columns=["Metric", "Value"])
 
-# --- 2) Rebuild an explain-only pipeline with the same estimator as your winner ---
-pipe_old = model_final               # Pipeline(prep -> clf) already fitted earlier
-est_old  = pipe_old.named_steps["clf"]
+# # --- 4) Feature effects (robust to get_feature_names_out issues)
+# pipe = v.model
+# steps = getattr(pipe, "named_steps", {})
+# prep = steps.get("prep", None)
+# if prep is None:
+#     # try to locate a ColumnTransformer if it wasn't named 'prep'
+#     prep = next((s[1] for s in getattr(pipe, "steps", []) if isinstance(s[1], ColumnTransformer)), None)
 
-pipe_explain = Pipeline([
-    ("prep", preprocess_fixed),
-    ("clf", clone(est_old)),         # clone so we can refit cleanly
-])
+# clf = steps.get("clf", pipe.steps[-1][1] if hasattr(pipe, "steps") else None)
 
-pipe_explain.fit(X_train, y_train)
 
-# OPTIONAL: replace model_final so everything downstream uses the fixed preprocessor
-model_final = pipe_explain
+# # Try to get names; if that fails, fall back to generic names sized by transform output
+# try:
+#     feat_names = prep.get_feature_names_out().tolist()
+# except Exception:
+#     # determine output width from an actual transform of 1 row
+#     out_dim = prep.transform(X_test.iloc[:1]).shape[1]
+#     feat_names = [f"feature_{i}" for i in range(out_dim)]
 
-def get_out_names(prep, input_cols):
-    return prep.get_feature_names_out(input_cols).tolist()
+# # Compute importances
+# if hasattr(clf, "coef_"):
+#     importances = clf.coef_.ravel()
+# elif hasattr(clf, "feature_importances_"):
+#     importances = clf.feature_importances_.ravel()
+# else:
+#     r = permutation_importance(pipe, X_test, y_test, n_repeats=10,
+#                                random_state=42, scoring="roc_auc")
+#     importances = r.importances_mean
 
-# After you do: model_final = pipe_explain
-prep = model_final.named_steps["prep"]
-clf  = model_final.named_steps["clf"]
+# # Align lengths safely
+# k = min(len(feat_names), len(importances))
+# feat_names = feat_names[:k]
+# importances = importances[:k]
 
-# 1) Get names directly from the *fitted* ColumnTransformer
-feat_names = prep.get_feature_names_out().tolist()   # <-- no arguments
+# coef_df = (pd.DataFrame({"Feature": feat_names, "Importance": importances})
+#            .sort_values("Importance", ascending=False)
+#            .reset_index(drop=True))
 
-# 2) Sanity checks (helpful if something still misaligns)
-n_est_features = None
-if hasattr(clf, "coef_"):
-    n_est_features = clf.coef_.ravel().shape[0]
-elif hasattr(clf, "feature_importances_"):
-    n_est_features = clf.feature_importances_.ravel().shape[0]
-
-if n_est_features is not None and n_est_features != len(feat_names):
-    print(f"[warn] Estimator sees {n_est_features} features; preprocessor exposes {len(feat_names)}")
-
-# 3) Get importances
-import numpy as np, pandas as pd, matplotlib.pyplot as plt
-if hasattr(clf, "coef_"):
-    importances = clf.coef_.ravel()
-elif hasattr(clf, "feature_importances_"):
-    importances = clf.feature_importances_.ravel()
-else:
-    from sklearn.inspection import permutation_importance
-    r = permutation_importance(model_final, X_train, y_train,
-                               n_repeats=10, random_state=42, scoring="roc_auc")
-    importances = r.importances_mean
-
-# 4) Align lengths defensively
-k = min(len(feat_names), len(importances))
-feat_names = feat_names[:k]
-importances = importances[:k]
-
-coef_df = (pd.DataFrame({"Feature": feat_names, "Importance": importances})
-             .sort_values("Importance", ascending=False))
-
-plt.figure(figsize=(8,6))
-plt.barh(coef_df.head(20)["Feature"][::-1], coef_df.head(20)["Importance"][::-1])
-plt.title("Top Feature Effects")
-plt.tight_layout(); plt.show()
+# # Plot top 20
+# plt.figure(figsize=(8, 6))
+# top = coef_df.head(20)
+# plt.barh(top["Feature"][::-1], top["Importance"][::-1])
+# plt.title("Top Feature Effects")
+# plt.xlabel("Importance")
+# plt.tight_layout()
+# plt.show()
 ```
+
+![Top Feature Effects Plot](feature_effects.png){width="55%"}
 
 ## Feature Importance 
 
