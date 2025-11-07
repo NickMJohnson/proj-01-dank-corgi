@@ -398,7 +398,7 @@ Age and BMI show monotone increases in predicted probability — expected in met
 ![Partial Dependence Plot Sedentary Minutes](pdp_sedentary_minutes.png){width="45%"}
 ![Partial Dependence Plot Sleep Drinke Per Day](pdp_drinks_per_day_12mo.png){width="45%"}
 
-Sedentary minutes and drinks/day show mild negative slopes in this linear model — likely reflecting residual confounding (e.g., higher sedentary time or drinking correlating with younger age / lower BMI in our sample) + the model’s linear form (cannot model U/J shapes).
+Sedentary minutes and drinks per day show mild or slightly negative slopes, which likely reflect confounding: Younger adults tend to report more sedentary time or alcohol consumption yet lower BMI and lower baseline prediabetes prevalence.
 
 **3. Observation-specific explanations**\
 We provide two complementary views:
@@ -415,7 +415,11 @@ Log-odds contributions: for high-risk and typical cases, BMI and age contribute 
 
 Leave-one-group-out Δprob: masking BMI or age produces the largest probability drops in high-risk individuals, confirming reliance on these features.
 
-**3. Fairness**\
+Case-level explanation plots (log-odds contributions and leave-one-feature-out changes) confirm that BMI and age usually dominate individual predictions, contributing most of the positive log-odds for high-risk respondents. Masking either variable causes the largest probability drops, verifying that these features anchor the model’s reasoning.
+Demographic attributes like sex and race act as secondary modifiers, slightly shifting probabilities up or down based on prevalence patterns.
+Behavioral factors (sleep, sedentary time, weight-change) exert smaller influencesfor fine-tuning individual-level interpretation but not decisive alone.
+
+**4. Fairness and Insight**\
 
 Group metrics at the chosen threshold show high recall across groups with precision varying somewhat by sex and race/ethnicity (consistent with differing prevalence). This supports the screening aim but suggests monitoring precision disparities.
 

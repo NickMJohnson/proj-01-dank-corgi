@@ -693,8 +693,7 @@ plt.show()
 
 
 ```{python}
-# Add these once (after your existing imports)
-
+# Model Interpretability Graphs: Global Feature Importance, PDP, Observation Specific
 from sklearn.inspection import PartialDependenceDisplay, permutation_importance
 from sklearn.base import BaseEstimator, ClassifierMixin
 import matplotlib.pyplot as plt
@@ -704,7 +703,7 @@ import re
 
 ```
 ```{python}
-# --- Unwrap helpers & feature-name utilities ---
+# Unwrap Helpers
 
 def unwrap_model(m):
     """
@@ -757,7 +756,7 @@ def original_parent(col_name):
 
 ```
 ```{python}
-# --- FIX: make FunctionTransformer name-safe & rebuild preprocessors ---
+# Rebuild preprocessors
 
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.compose import ColumnTransformer
@@ -766,20 +765,20 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.base import clone
 
-# Categorical pipeline with feature_names_out defined (prevents the AttributeError)
+# Categorical pipeline 
 cat_pipe_fixed = Pipeline([
     ("imp", SimpleImputer(strategy="constant", fill_value="Unknown")),
     ("to_str", FunctionTransformer(lambda X: X.astype(str), feature_names_out="one-to-one")),
     ("ohe", OneHotEncoder(handle_unknown="ignore", sparse_output=False, min_frequency=0.02)),
 ])
 
-# Numeric pipeline (unchanged)
+# Numeric pipeline
 num_pipe_fixed = Pipeline([
     ("imp", SimpleImputer(strategy="median", add_indicator=True)),
     ("sc", StandardScaler()),
 ])
 
-# ColumnTransformers mirroring your originals
+# ColumnTransformers 
 preprocess_fixed = ColumnTransformer(
     transformers=[
         ("num", num_pipe_fixed, present_numeric),
@@ -788,7 +787,7 @@ preprocess_fixed = ColumnTransformer(
     remainder="drop",
 )
 
-# Tree version (mirrors your preprocess_tree but with the fixed to_str)
+# Tree version 
 cat_pipe_tree_fixed = Pipeline([
     ("imp", SimpleImputer(strategy="constant", fill_value="Unknown")),
     ("to_str", FunctionTransformer(lambda X: X.astype(str), feature_names_out="one-to-one")),
@@ -805,47 +804,45 @@ preprocess_tree_fixed = ColumnTransformer(
 
 ```
 ```{python}
-# --- Build an explain-only pipeline using the fixed preprocessor + your chosen estimator ---
+# Build an explain-only pipeline
 
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline
 
-# Use the same estimator that won earlier
+
 pipe_old, prep_old, est_old = unwrap_model(model_final)
 
-# Pick the matching preprocessor style based on the winner
 if any(key in winner_name for key in ["HGB", "RandomForest"]):
     prep_fixed = preprocess_tree_fixed
 else:
     prep_fixed = preprocess_fixed
 
-# Clone the fitted estimator so we can refit cleanly with the fixed preprocessor
+
 pipe_explain = Pipeline([
     ("prep", prep_fixed),
     ("clf", clone(est_old)),
 ])
 
-# Fit on the same training data
+
 pipe_explain.fit(X_train, y_train)
 
-# From here on, use `pipe_explain` for feature names, importances, PDPs, and local explanations
+
 pipe, prep, est = unwrap_model(pipe_explain)
 
 print("Explain pipeline ready:", type(est).__name__, "with preprocessor:", type(prep).__name__)
 
-# after building & fitting pipe_explain ...
-model_final = pipe_explain          # <— use the fixed preprocessor going forward
+model_final = pipe_explain         
 pipe, prep, est = unwrap_model(model_final)
 
-# sanity check
-print(prep)  # should show FunctionTransformer(..., feature_names_out='one-to-one')
+
+print(prep)  
 
 
 
 ```
 
 ```{python}
-# --- Global Feature Importance (coef_, feature_importances_, or permutation) ---
+# Global Feature Importance
 
 pipe, prep, est = unwrap_model(model_final)
 
