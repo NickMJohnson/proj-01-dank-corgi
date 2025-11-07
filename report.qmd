@@ -442,12 +442,12 @@ The model shows how non-clinical, survey dada can estimate the likelihood of hav
 - Predictions are associational, not causal. The model describes relationships in population data and should not be used to infer direct cause-and-effect.  
 - Self-report bias in survey responses (e.g., sleep, sedentary time, alcohol use) can make estimates less accurate.  
 - Precision varies by subgroup (sex, race/ethnicity). These gaps align with prevalence differences but warrant monitoring to prevent systematic disparities.  
-- The model is trained on cross-sectional NHANES 2021–2023 data; its calibration and performance may drift as health behaviors, population composition, or measurement protocols change.
+- The model is trained on NHANES 2021–2023 data so its performance may drift as health behaviors, population composition, or measurement protocols change.
 
 ## Improvements Informed by Results
 1. **Expand Data-Set:** Train model over multiple survey cycles and include more survey features that are consistant throughout cycles. 
 2. **Calibration:** Maintain probability reliability through periodic recalibration (e.g., Platt or isotonic scaling), especially when applied to future NHANES cycles.  
-3. **Fairness Audit:** Regularly assess subgroup performance (e.g., race, sex, socioeconomic status) and consider group-specific thresholds or post-hoc calibration if precision gaps persist.
+3. **Fairness Audit:** Regularly assess subgroup performance (e.g., race, sex) and consider group-specific thresholds or post-hoc calibration if precision gaps persist.
 4. **External Validation:** Re-evaluate on future NHANES waves or community health surveys to confirm generalizability across populations and time periods.  
 5. **Public Health Integration:** Combine model predictions with demographic weighting to estimate regional or national prediabetes risk prevalence, aiding public-health surveillance and early-intervention planning.
 
