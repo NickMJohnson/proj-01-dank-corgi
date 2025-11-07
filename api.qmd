@@ -127,7 +127,8 @@ v = VetiverModel(
     description="Logistic regression model predicting prediabetes from NHANES survey data.",
 )
 
-vetiver_pin_write(board, v)```{python}
+vetiver_pin_write(board, v)
+
 import vetiver
 from vetiver import VetiverModel, vetiver_pin_write
 
