@@ -382,9 +382,12 @@ Together, these curves show that the model achieves a strong balance between dis
 **1. Global Importance**\
 ![Feature Importance](feature_importance_global.png){width="65%"}
 
-Global importance.
-The grouped feature importance shows medical history and demographics dominate risk:
-ever_high_bp , race/ethnicity, age, and BMI are the most predictive indicators.
+The global feature importance plot confirms that demographic and cardiometabolic indicators drive most of the model’s predictive power.
+Age, self-reported BMI, and ever having high blood pressure are the top predictors, reflecting widely known links between aging, hypertension, and glucose dysregulation. Together, these variables capture much of the population-level signal for prediabetes risk.
+
+Race and ethnicity also contribute meaningfully, primarily reflecting structural health disparities and differences in known population risk factors rather than intrinsic biological variation. Behavioral and mental-health variables (e.g., poor appetite, sedentary minutes, and weight-change) contribute smaller but complementary effects, showing that lifestyle features are somewhat predictive.
+
+
 
 **2. Partial Dependence**\
 ![Partial Dependence Plot Age](pdp_age_years.png){width="45%"}
