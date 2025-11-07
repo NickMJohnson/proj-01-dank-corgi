@@ -358,17 +358,17 @@ The cross-validation results show that the regularized logistic regression model
 ## Curves & calibration
 
 **1. ROC Curve – Model Discrimination**\
-![ROC curve (test)](docs/roc_curve_test.png){width="55%"}
+![ROC curve (test)](plots/roc_curve_test.png){width="55%"}
 
 The ROC curve shows that the model distinguishes reasonably well between likely and unlikely prediabetes cases, with an AUC of about 0.72.
 
 **2. Precision–Recall Curve – Positive Class Performance**\
-![Precision–Recall curve (test)](docs/pr_curve_test.png){width="45%"}
+![Precision–Recall curve (test)](plots/pr_curve_test.png){width="45%"}
 
 The Precision–Recall curve indicates strong recall with moderate precision, showing the model performs well for identifying at-risk individuals in an imbalanced dataset.
 
 **3. Calibration Plot – Probability Reliability**\
-![Calibration plot (test)](docs/calibration_test.png){width="45%"}
+![Calibration plot (test)](plots/calibration_test.png){width="45%"}
 
 The calibration plot shows that predicted probabilities align closely with observed outcomes—suggesting the model’s probability estimates are reliable.
 
@@ -380,7 +380,7 @@ Together, these curves show that the model achieves a strong balance between dis
 ## Model Interpretation
 
 **1. Global Importance**\
-![Feature Importance](docs/feature_importance_global.png){width="65%"}
+![Feature Importance](plots/feature_importance_global.png){width="65%"}
 
 The global feature importance plot confirms that demographic and cardiometabolic indicators drive most of the model’s predictive power.
 Age, self-reported BMI, and ever having high blood pressure are the top predictors, reflecting widely known links between aging, hypertension, and glucose dysregulation. Together, these variables capture much of the population-level signal for prediabetes risk.
@@ -390,28 +390,28 @@ Race and ethnicity also contribute meaningfully, primarily reflecting structural
 
 
 **2. Partial Dependence**\
-![Partial Dependence Plot Age](docs/pdp_age_years.png){width="45%"}
-![Partial Dependence Plot BMI](docs/pdp_bmi_from_selfreport.png){width="45%"}
+![Partial Dependence Plot Age](plots/pdp_age_years.png){width="45%"}
+![Partial Dependence Plot BMI](plots/pdp_bmi_from_selfreport.png){width="45%"}
 
 Age and BMI show monotone increases in predicted probability — expected in metabolic risk.
 
-![Partial Dependence Plot Sedentary Minutes](docs/pdp_sedentary_minutes.png){width="45%"}
-![Partial Dependence Plot Sleep Drinke Per Day](docs/pdp_drinks_per_day_12mo.png){width="45%"}
+![Partial Dependence Plot Sedentary Minutes](plots/pdp_sedentary_minutes.png){width="45%"}
+![Partial Dependence Plot Sleep Drinke Per Day](plots/pdp_drinks_per_day_12mo.png){width="45%"}
 
 Sedentary minutes and drinks per day show mild or slightly negative slopes, which likely reflect confounding: Younger adults tend to report more sedentary time or alcohol consumption yet lower BMI and lower baseline prediabetes prevalence.
 
 **3. Observation-specific explanations**\
 We provide two complementary views:
 
-![Explain Max Probability](docs/explain_max_prob_3347.png){width="45%"}
-![Explain Random Positive](docs/explain_random_positive_1585.png){width="45%"}
-![Explain Random Negative](docs/explain_random_negative_2137.png){width="45%"}
+![Explain Max Probability](plots/explain_max_prob_3347.png){width="45%"}
+![Explain Random Positive](plots/explain_random_positive_1585.png){width="45%"}
+![Explain Random Negative](plots/explain_random_negative_2137.png){width="45%"}
 
 Log-odds contributions: for high-risk and typical cases, BMI and age contribute the most positive log-odds; some demographics reduce risk.
 
-![Explain Max Probability](docs/explain_l1g_max_prob_3347.png){width="45%"}
-![Explain Random Positive](docs/explain_l1g_random_positive_1585.png){width="45%"}
-![Explain Random Negative](docs/explain_l1g_random_negative_2137.png){width="45%"}
+![Explain Max Probability](plots/explain_l1g_max_prob_3347.png){width="45%"}
+![Explain Random Positive](plots/explain_l1g_random_positive_1585.png){width="45%"}
+![Explain Random Negative](plots/explain_l1g_random_negative_2137.png){width="45%"}
 
 Leave-one-group-out Δprob: masking BMI or age produces the largest probability drops in high-risk individuals, confirming reliance on these features.
 
