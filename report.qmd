@@ -383,9 +383,9 @@ Together, these curves show that the model achieves a strong balance between dis
 ![Feature Importance](plots/feature_importance_global.png){width="65%"}
 
 The global feature importance plot confirms that demographic and cardiometabolic indicators drive most of the model’s predictive power.
-Age, self-reported BMI, and ever having high blood pressure are the top predictors, reflecting widely known links between aging, hypertension, and glucose dysregulation. Together, these variables capture much of the population-level signal for prediabetes risk.
+Age, self-reported BMI, and ever having high blood pressure are the top predictors, reflecting links between aging, hypertension, and glucose dysregulation. Together, these variables capture much of the population-level signal for prediabetes risk.
 
-Race and ethnicity also contribute meaningfully, primarily reflecting structural health disparities and differences in known population risk factors rather than intrinsic biological variation. Behavioral and mental-health variables (e.g., poor appetite, sedentary minutes, and weight-change) contribute smaller but complementary effects, showing that lifestyle features are somewhat predictive.
+Race and ethnicity also contribute meaningfully, primarily reflecting structural health disparities and differences in known population risk factors. Behavioral and mental-health variables (e.g., poor appetite, sedentary minutes, and weight-change) contribute small but complementary effects, showing that lifestyle features are somewhat predictive in the model. 
 
 
 
@@ -409,17 +409,17 @@ We provide two complementary views:
 ![Explain Random Positive](plots/explain_random_positive_1585.png){width="45%"}
 ![Explain Random Negative](plots/explain_random_negative_2137.png){width="45%"}
 
-Log-odds contributions: for high-risk and typical cases, BMI and age contribute the most positive log-odds; some demographics reduce risk.
+Log-odds contributions: for high-risk and typical cases, BMI and age contribute the most positive log-odds.
 
 ![Explain Max Probability](plots/explain_l1g_max_prob_3347.png){width="45%"}
 ![Explain Random Positive](plots/explain_l1g_random_positive_1585.png){width="45%"}
 ![Explain Random Negative](plots/explain_l1g_random_negative_2137.png){width="45%"}
 
-Leave-one-group-out Δprob: masking BMI or age produces the largest probability drops in high-risk individuals, confirming reliance on these features.
+Leave-one-group-out Δprob: masking BMI or age produces the largest probability drops in high-risk individuals, which confirms reliance on these features.
 
-Case-level explanation plots (log-odds contributions and leave-one-feature-out changes) confirm that BMI and age usually dominate individual predictions, contributing most of the positive log-odds for high-risk respondents. Masking either variable causes the largest probability drops, verifying that these features anchor the model’s reasoning.
-Demographic attributes like sex and race act as secondary modifiers, slightly shifting probabilities up or down based on prevalence patterns.
-Behavioral factors (sleep, sedentary time, weight-change) exert smaller influencesfor fine-tuning individual-level interpretation but not decisive alone.
+Case-level explanation plots (log-odds contributions and leave-one-feature-out changes) confirm that BMI and age generally dominate individual prediction and contribute most of the positive log-odds for high-risk respondents. Masking either variable causes the largest probability drops, showing these features anchor the model’s reasoning.
+Demographic features such as sex and race slightly shift probabilities up or down based on prevalence patterns.
+Behavioral factors (sleep, sedentary time, weight-change) exert even smaller influences, these are not decisive alone.
 
 **4. Fairness and Insight**\
 
@@ -430,15 +430,12 @@ Group metrics at the chosen threshold show high recall across groups with precis
 
 # Recommendations
 
-
-This model demonstrates how non-clinical, survey-based data can estimate prediabetes likelihood using accessible health and behavioral variables. It provides a proof-of-concept for population screening and educational use, showing that age, BMI, and cardiometabolic history capture much of the risk signal without clinical laboratory data. 
-
+The model shows how non-clinical, survey dada can estimate the likelihood of having prediabetes using easily accessable health and behavioral features. It provides proof-of-concept for population screening and educational use. 
 
 ## Intended Use
 
 - The intended use of this model is as a survey-based pre-screening tool to flag individuals who may benefit from confirmatory glucose or HbA1c testing. At this stage, its intended to be used to aid in the decision making process, not as a stand-alone decision making tool.
-- Apply the recall-optimized threshold (~0.38) to capture most likely cases while maintaining moderate precision; health programs with limited lab capacity may raise the threshold to reduce false positives.  
-- The model is suitable for research, education, and policy planning, not for individual medical decision-making or diagnosis.
+- The model is suitable for research, education, and policy planning, not for stand-alone individual medical decision-making or diagnosis.
 
 ## Limitations
 
@@ -456,4 +453,4 @@ This model demonstrates how non-clinical, survey-based data can estimate prediab
 
 ## Summary
 
-Overall, this model highlights the potential of public survey data to support early detection and outreach around prediabetes.  While not intended for clinical decision-making, it demonstrates that simple, transparent methods can meaningfully stratify population risk using accessible information. Future iterations that refine calibration, test fairness, and validate performance across new NHANES cycles could turn this research prototype into a dependable screening aid for community and public-health programs. By balancing interpretability, recall, and ethical safeguards, the model serves as a foundation for responsible, data-driven approaches to preventive health.
+Overall, this model highlights the potential of using easily collectable survey data to support early outreach and triage for prediabetes screening. While this model, at its current stage, is not intended to be used for standalone clinical decision making, it shows that population risk can be meaningfully stratified using accessable information. Future iterations that take into account more survey data across more NHANES survey cycles could turn this model into a dependable screening aid for community and public-health programs. By balancing interpretability, recall, and ethical safeguards, the model serves as a foundation for data driven approaches to preventative healthcare.
