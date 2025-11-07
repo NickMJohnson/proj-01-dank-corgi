@@ -40,11 +40,11 @@ model_desc = v.description
 num_features = len(v.prototype.model_construct().model_dump())
 
 display(Markdown(f"""
-- A {model_desc} using {num_features} feature{'s'[:num_features^1]}.
+- A {model_desc}.
 """))
 ```
 
-This model card documents the final version of **[FILL IN]**, a penalized logistic regression classifier trained on NHANES 2021–2023 survey data to predict prediabetes risk.
+This model card documents the final version of prediabetes-model-3, a penalized logistic regression classifier trained on NHANES 2021–2023 survey data to predict prediabetes risk.
 
 ### Pipeline Components
 -  **Preprocessing**: Median imputation (numeric) with indicator flags, constant imputation `"Unknown"` (categorical), one-hot encoding (`min_frequency=0.02`), and standard scaling. 
@@ -243,22 +243,92 @@ metrics_test = {
 pd.DataFrame(metrics_test.items(), columns=["Metric", "Value"])
 ```
 
+### Interpretation
+
+On the held-out NHANES test set, the model achieved **accuracy 0.644**, **ROC AUC 0.700**, and **Brier score 0.216**. Together, these indicate **moderate discrimination** and **reasonable probability calibration** for an educational screening model:
+
+- **Accuracy 0.644**: about 64.4% of respondents are classified correctly. Because the dataset is imbalanced, accuracy alone is not sufficient for judging performance.
+- **ROC AUC 0.700**: the model can rank a randomly chosen positive case above a randomly chosen negative case about 70% of the time—acceptable discrimination for a lightweight, questionnaire-only model.
+- **Brier score 0.216**: average squared error of predicted probabilities is ~0.216, suggesting risk scores are **directionally reliable** (not overly overconfident).
+
+**What this means for screening use (non-clinical):**
+- Use the model to **prioritize follow-up** (e.g., labs) rather than to make decisions. It provides useful **risk ranking** (AUC) and **interpretable probabilities** (Brier), but it is not a diagnostic.
+- Threshold choice matters. If recall (sensitivity) is the priority, select a **lower threshold** than 0.50 and report precision/recall trade-offs in context.
+
+**Limitations & next steps:**
+- With AUC near 0.70, there is room to improve recall for higher-risk subgroups (e.g., via calibration or class-weighting).
+- Consider **probability calibration** (Platt/Isotonic) and **fairness checks** by sex and race/ethnicity to ensure consistent performance across groups.
+- External validation on a newer NHANES cycle is recommended before reuse beyond this coursework context.
 
 ## Disagregatted Model Performance 
 ```{python}
+import numpy as np
+import pandas as pd
+from sklearn.metrics import accuracy_score, roc_auc_score, brier_score_loss
+
 results = []
-if "columns" in v.metadata.user:
-  expected_cols = v.metadata.user["columns"]
-else:
-  expected_cols = v.prototype.model_json_schema()["properties"].keys()
+# expected_cols already computed in your snippet
 
 for race, group in nhanes_test.groupby("race_eth"):
-  X_group = group.drop(columns=["prediabetes_flag"])
-  y_group = group["prediabetes_flag"]
-  X_group = pd.get_dummies(X_group, drop_first=True)
-  X_group = X_group.reindex(columns=expected_cols, fill_value=0)
+    Xg = group.drop(columns=["prediabetes_flag"]).copy()
+    yg = group["prediabetes_flag"].astype(int).copy()
 
+    Xg = pd.get_dummies(Xg, drop_first=True)
+    Xg = Xg.reindex(columns=expected_cols, fill_value=0)
+
+    # predictions from Vetiver-wrapped model
+    proba = v.model.predict_proba(Xg)[:, list(v.model.classes_).index(1)]
+    yhat  = v.model.predict(Xg)
+
+    # safe ROC AUC (fails if only one class in subgroup)
+    auc = np.nan
+    if yg.nunique() == 2:
+        auc = roc_auc_score(yg, proba)
+
+    results.append({
+        "race_eth": str(race),
+        "n": int(len(group)),
+        "prevalence": float(yg.mean()),
+        "accuracy": float(accuracy_score(yg, yhat)),
+        "roc_auc": float(auc) if not np.isnan(auc) else np.nan,
+        "brier_score": float(brier_score_loss(yg, proba, pos_label=1)),
+    })
+
+by_race = (
+    pd.DataFrame(results)
+      .sort_values("n", ascending=False)
+      .reset_index(drop=True)
+)
+
+display(by_race)
 ```
+
+### Interpretation
+
+The disaggregated evaluation by **race/ethnicity** helps assess how consistently the model performs across different demographic subgroups in the NHANES 2021–2023 test set. Each subgroup’s sample size (`n`), prevalence of prediabetes, and evaluation metrics (accuracy, ROC AUC, and Brier score) were calculated independently using the same preprocessing and logistic regression model.
+
+Overall, subgroup results were as follows:
+
+- **Non-Hispanic White:** Accuracy = 0.655, ROC AUC = 0.708, Brier = 0.212  
+- **Non-Hispanic Black:** Accuracy = 0.608, ROC AUC = 0.675, Brier = 0.234  
+- **Other Hispanic:** Accuracy = 0.656, ROC AUC = 0.715, Brier = 0.211  
+- **Mexican American:** Accuracy = 0.611, ROC AUC = 0.703, Brier = 0.229  
+- **Other/Multiracial:** Accuracy = 0.654, ROC AUC = 0.704, Brier = 0.215  
+- **Non-Hispanic Asian:** Accuracy = 0.608, ROC AUC = 0.727, Brier = 0.218  
+
+These results indicate that **overall discrimination is consistent across racial subgroups**, with ROC AUC values ranging from 0.67 to 0.73.  
+Accuracy varies slightly between 0.61 and 0.66, mostly reflecting differences in class prevalence rather than major performance gaps.
+
+Key takeaways:
+- The model maintains **stable calibration** across groups, as reflected in similar Brier scores (≈ 0.21–0.23).  
+- **Non-Hispanic Asian** respondents show the highest ROC AUC (0.727), suggesting strong separation between positive and negative cases, although absolute accuracy is moderate due to smaller sample size.  
+- **Non-Hispanic Black** respondents show slightly lower AUC (0.675) and the highest Brier score (0.234), indicating possible mild underperformance or calibration drift.  
+- **Hispanic and multiracial** groups display performance metrics near the overall population average, implying robust generalization.
+
+**Interpretation:**  
+The model appears to **generalize fairly across racial/ethnic subgroups**, without major disparities in accuracy or discrimination.  
+However, slight variations suggest that model calibration could be improved to ensure consistent probability reliability across populations.  
+Future improvements could include **reweighting strategies** or **fairness-aware regularization** to reduce residual bias and strengthen equitable performance across demographic groups.
 
 
 ## Visualizing Model Performance
@@ -289,6 +359,44 @@ plt.grid(True)
 plt.show()
 
 ```
+
+## ## Interpretation of Model Calibration and Discrimination Performance
+
+The plots above visualize two key aspects of model behavior — **discrimination** and **calibration** — on the **NHANES 2021–2023 held-out test set**.
+
+### ROC Curve
+
+The **ROC (Receiver Operating Characteristic)** curve illustrates the trade-off between the **true positive rate (sensitivity)** and **false positive rate (1 – specificity)** across all possible classification thresholds.
+
+- The model’s **area under the ROC curve (AUC)** is approximately **0.70**, indicating **moderate discrimination ability**.  
+  This means that, for about **70% of random positive–negative pairs**, the model correctly assigns a higher predicted probability to the prediabetic individual.  
+- The curve lies **well above the diagonal baseline (AUC = 0.5)**, confirming that the model performs **better than random guessing**.  
+- The ROC curve shape is **smooth and consistent**, suggesting that the model produces **stable probability outputs** rather than erratic or overfitted predictions.
+
+Although the model’s discrimination is not perfect, it aligns with expectations for **survey-only data that omit laboratory biomarkers** — capturing general health risk patterns while maintaining interpretability.
+
+### Calibration Curve
+
+The **calibration plot** compares the **predicted probability of prediabetes** against the **observed frequency** in each probability bin.
+
+- The **nearly diagonal alignment** of points indicates that the model’s predicted probabilities are **well-calibrated** — i.e., a predicted probability of **0.6** corresponds roughly to a **60% actual chance of prediabetes** in the data.  
+- **Slight deviations** around mid-range probabilities (**0.4–0.6**) may suggest **mild underconfidence**, which could be refined using **post-hoc calibration techniques** (e.g., *Platt scaling* or *isotonic regression*).
+
+### Summary
+
+Together, these plots suggest that the model is:
+
+- **Well-calibrated**, providing **interpretable risk probabilities** that align closely with observed outcomes.  
+- **Moderately discriminative**, suitable for **educational and analytical use** in understanding population-level risk factors for prediabetes.
+
+### Future Work
+
+Future work could explore:
+- **Threshold optimization** to better balance sensitivity and specificity for screening scenarios.  
+- **Calibration refinement** to enhance probability accuracy for intermediate-risk individuals.  
+- **Fairness audits** across subpopulations to confirm consistent discrimination performance beyond aggregate ROC AUC.
+
+
 
 ## Custom Plots
 
@@ -382,8 +490,44 @@ plt.title("Top Feature Effects")
 plt.tight_layout(); plt.show()
 ```
 
+## Feature Importance 
 
-# Ethical considerations
+The bar chart above summarizes the **top 20 post-preprocessing features** by their effect size on predictions from the final pipeline. Bars reflect the magnitude of each feature’s influence **after the full ColumnTransformer** (imputation → type cast → one-hot encoding → scaling). Names are prefixed by the transformer:
+- `num__…` = numeric features (median-imputed, scaled, with missing indicators)  
+- `cat__…` = categorical features (imputed → cast to string → one-hot encoded)  
+- Suffixes like `_infrequent_sklearn` indicate **rare levels auto-bucketed** by `OneHotEncoder(min_frequency=…)`.
+
+### What stands out
+- **num__age_years** and **num__bmi_from_selfreport** dominate importance, matching known metabolic risk patterns (older age, higher BMI ⇒ higher risk).
+- Cardiometabolic history signals contribute meaningfully:  
+  **cat__ever_high_chol_ans_Yes**, **cat__ever_high_bp_ans_Yes**.
+- Demographic encodings show signal:  
+  **cat__race_eth_Mexican American**, **cat__race_eth_Non-Hispanic Asian**, and **cat__sex_Male** have measurable effects.
+- Several health/behavioral items register non-trivial importance, e.g.,  
+  **cat__regular_periods_12mo_ans_No**, **cat__ever_thyroid_problem_ans_infrequent_sklearn**,  
+  smoking-related indicators (**cat__smoked_100_cigs_ans_infrequent_sklearn**, **cat__ever_smoker_infrequent_sklearn**, **cat__current_smoker_1.0**, **cat__smoke_now_ans_Some days**),  
+  **num__weight_change_1y_lb**, and **cat__dpq_poor_appetite_ans_Yes**.
+
+### How to read this figure (and its limits)
+- **Magnitude, not direction:** The plot shows effect size (from model coefficients or permutation importance).  
+  It **does not encode sign**; a large bar means “important,” not necessarily “risk increasing.”  
+  For directionality with linear models, inspect the raw `coef_`; for trees, use **partial dependence plots (PDPs)**.
+- **One-hot fragments vs. concepts:** Individual dummies (e.g., `race_eth_*`) split a concept across multiple bars.  
+  For clearer storytelling, group dummies back to their **parent variable** (e.g., “race_eth”) and sum importances.
+- **Correlation & redundancy:** Highly correlated inputs (e.g., BMI and recent weight change) can **share or swap** importance.  
+  Consider **bootstrapped importances** to assess stability.
+- **Missing indicators:** Numeric pipelines add “missing” flags; if they appear near the top, missingness itself carries signal.  
+  That can indicate **systematic patterns in who reports/doesn’t report** certain values.
+
+### Takeaways for the model card
+- The model’s strongest signals are **age** and **BMI**, followed by **hypertension**/**hypercholesterolemia** history, and several demographic and smoking indicators.  
+- Importance patterns are **directionally consistent** with epidemiology, increasing trust in face validity.  
+- Because of one-hot encoding and correlated features, **grouped importances and PDPs** should accompany this plot for interpretation.  
+- For fairness review, repeat importance summaries and PDPs **within subgroups** (e.g., by sex or race/ethnicity) and compare shapes/levels.
+
+> Tip (optional, if you want a signed view for a logistic-regression winner): plot the top **positive** and **negative** coefficients by using `clf.coef_.ravel()` and joining on `prep.get_feature_names_out()`. This complements the magnitude-only view shown here.
+
+## Ethical considerations
 This project involved building predictive models on **NHANES 2021–2023 questionnaire data**, which include sensitive demographic, behavioral, and health-related variables. Given the medical nature of the dataset, the primary ethical concern is avoiding **misuse of model outputs** in clinical or policy contexts without proper validation. Although the model uses self-reported, non-laboratory variables to predict prediabetes risk, it should not be interpreted as a diagnostic or clinical decision tool.  
 
 Because NHANES data reflect real-world demographic and health disparities, there is potential for the model to inadvertently **amplify biases** related to socioeconomic status, race/ethnicity, or healthcare access. For example, underrepresentation of specific subgroups or differences in reporting accuracy could lead to systematic over- or underestimation of prediabetes risk for certain populations.  
