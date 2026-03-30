@@ -51,3 +51,4 @@ rsconnect/
 .Rproj.user
 
 /.quarto/
+service-auth.json
